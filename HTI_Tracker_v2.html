@@ -509,7 +509,7 @@
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div class="card-title" style="margin-bottom:0;">📋 Activity Log</div>
-          <button class="btn-small" style="background:#fee2e2;color:var(--red);" onclick="clearLog()">🗑 মুছুন</button>
+          <button class="btn-small" id="clear-log-btn" style="background:#fee2e2;color:var(--red);" onclick="clearLog()">🗑 মুছুন</button>
         </div>
         <div id="activity-log-list"></div>
       </div>
@@ -522,40 +522,31 @@
 <div class="modal-overlay" id="pay-modal">
   <div class="modal">
     <div class="modal-title">
-      <span id="modal-member-name">Payment করুন</span>
+      <span id="modal-member-name">Payment Save করুন</span>
       <button class="close-btn" onclick="closeModal()">✕</button>
     </div>
     <div style="font-size:12px;color:var(--gray);margin-bottom:10px;" id="modal-info"></div>
 
-    <!-- Month type tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <button id="tab-past" class="month-type-tab active" onclick="switchMonthTab('past')">⬅️ বকেয়া মাস</button>
-      <button id="tab-advance" class="month-type-tab" onclick="switchMonthTab('advance')">➡️ অগ্রিম মাস</button>
-    </div>
-
-    <!-- Selected month summary -->
-    <div id="pay-summary" style="background:#f0fdf4;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;display:none;">
-      <span id="pay-summary-text"></span>
-    </div>
-
-    <div style="font-size:12px;font-weight:600;color:var(--green-dark);margin-bottom:6px;" id="month-section-label">বকেয়া মাস বেছে নিন:</div>
-    <div class="month-selector" id="month-selector"></div>
-
-    <!-- Surplus amount -->
-    <div style="margin-top:10px;padding:12px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;">
-      <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:6px;">💰 অতিরিক্ত টাকা (Surplus)</div>
+    <!-- Smart Amount Input -->
+    <div style="background:#f0fdf4;border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:600;color:var(--green-dark);margin-bottom:8px;">💵 কত টাকা দিয়েছেন?</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <span style="font-size:13px;color:#92400e;">₹</span>
-        <input type="number" id="surplus-amount" placeholder="0" min="0"
-          style="flex:1;padding:8px 10px;border:1px solid #fde68a;border-radius:8px;font-size:13px;outline:none;background:white;"
-          oninput="updatePaySummary()">
+        <span style="font-size:18px;font-weight:700;color:var(--green-dark);">₹</span>
+        <input type="number" id="smart-amount" placeholder="0" min="0"
+          style="flex:1;padding:10px 14px;border:2px solid #86efac;border-radius:10px;font-size:18px;font-weight:700;outline:none;background:white;color:var(--green-dark);"
+          oninput="calculateSmartPayment()">
       </div>
-      <div style="font-size:10px;color:#92400e;margin-top:4px;">নির্দিষ্ট পরিমাণের বেশি দিলে এখানে লিখুন</div>
     </div>
 
-    <div id="pay-total-display" style="margin-top:10px;text-align:center;font-size:13px;font-weight:700;color:var(--green-dark);display:none;"></div>
+    <!-- Auto-fill result preview -->
+    <div id="smart-preview" style="display:none;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:600;color:var(--green-dark);margin-bottom:6px;">📊 Auto-Fill Preview:</div>
+      <div id="smart-preview-content" style="background:#f9fafb;border-radius:10px;padding:12px;font-size:12px;line-height:1.8;border:1px solid #e5e7eb;"></div>
+    </div>
 
-    <button class="btn-primary" style="margin-top:12px;" onclick="savePayment()">✅ Payment Save করুন</button>
+    <div id="pay-total-display" style="margin-bottom:10px;text-align:center;font-size:13px;font-weight:700;color:var(--green-dark);display:none;"></div>
+
+    <button class="btn-primary" style="margin-top:4px;" onclick="savePayment()">✅ Payment Save করুন</button>
   </div>
 </div>
 
@@ -644,22 +635,49 @@ function doLogin() {
   const errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
 
-  // Check owner
+  // Check owner first (no Drive needed)
   if (uname === OWNER_CREDS.username && pass === OWNER_CREDS.password) {
     currentUser = { username: uname, role: 'owner', name: OWNER_CREDS.name, permissions: { addMember: true, payment: true, report: true, whatsapp: true, admin: true, deleteAll: true } };
     startApp();
     return;
   }
-  // Check admins
-  const admin = authData.admins.find(a => a.username === uname && a.password === pass);
-  if (admin) {
-    if (admin.suspended) { errEl.textContent = '❌ আপনার account suspend করা হয়েছে।'; errEl.style.display = 'block'; return; }
-    currentUser = { ...admin, role: admin.role || 'admin' };
-    startApp();
-    return;
-  }
-  errEl.textContent = '❌ Username বা Password ভুল!';
-  errEl.style.display = 'block';
+
+  // For admin login, load from Drive first to get latest admin list
+  const btn = document.querySelector('.login-btn');
+  btn.textContent = '⏳ যাচাই হচ্ছে...';
+  btn.disabled = true;
+
+  loadFromDrive().then(() => {
+    btn.textContent = '✅ প্রবেশ করুন';
+    btn.disabled = false;
+
+    const admin = authData.admins.find(a => a.username === uname && a.password === pass);
+    if (admin) {
+      if (admin.suspended) {
+        errEl.textContent = '❌ আপনার account suspend করা হয়েছে।';
+        errEl.style.display = 'block';
+        return;
+      }
+      currentUser = { ...admin, role: admin.role || 'admin' };
+      startApp();
+      return;
+    }
+    errEl.textContent = '❌ Username বা Password ভুল!';
+    errEl.style.display = 'block';
+  }).catch(() => {
+    btn.textContent = '✅ প্রবেশ করুন';
+    btn.disabled = false;
+    // Try local data as fallback
+    const admin = authData.admins.find(a => a.username === uname && a.password === pass);
+    if (admin) {
+      if (admin.suspended) { errEl.textContent = '❌ আপনার account suspend করা হয়েছে।'; errEl.style.display = 'block'; return; }
+      currentUser = { ...admin, role: admin.role || 'admin' };
+      startApp();
+      return;
+    }
+    errEl.textContent = '❌ Username বা Password ভুল!';
+    errEl.style.display = 'block';
+  });
 }
 
 function startApp() {
@@ -979,153 +997,156 @@ function getUnpaidMonths(member, rate) {
   return unpaid;
 }
 
-// ========== PAY MODAL ==========
-let payingGroup = null, payingId = null, selectedMonths = [], currentMonthTab = 'past';
+// ========== PAY MODAL — SMART AUTO-FILL ==========
+let payingGroup = null, payingId = null;
+let smartResult = null; // stores calculated result
 
 function openPayModal(gid, id) {
   const canPay = currentUser.role === 'owner' || (currentUser.permissions && currentUser.permissions.payment);
   if (!canPay) { showToast('❌ আপনার Payment করার permission নেই।'); return; }
   payingGroup = gid;
   payingId = id;
-  selectedMonths = [];
-  currentMonthTab = 'past';
-  document.getElementById('surplus-amount').value = '';
-  document.getElementById('pay-summary').style.display = 'none';
-  document.getElementById('pay-total-display').style.display = 'none';
+  smartResult = null;
 
   const g = data.groups[gid];
   const member = g.members.find(m => m.id === id);
   document.getElementById('modal-member-name').textContent = member.name;
-  document.getElementById('modal-info').textContent = `${g.name} • ₹${g.rate}/মাস`;
 
-  // Reset tabs
-  document.getElementById('tab-past').classList.add('active');
-  document.getElementById('tab-advance').classList.remove('active');
-  document.getElementById('month-section-label').textContent = 'বকেয়া মাস বেছে নিন:';
+  const unpaidCount = getUnpaidMonths(member, g.rate).length;
+  const surplusBalance = member.surplusBalance || 0;
+  let infoText = `${g.name} • ₹${g.rate}/মাস`;
+  if (unpaidCount > 0) infoText += ` • বকেয়া: ${unpaidCount} মাস`;
+  if (surplusBalance > 0) infoText += ` • জমা: ₹${surplusBalance}`;
+  document.getElementById('modal-info').textContent = infoText;
 
-  renderMonthSelector();
+  document.getElementById('smart-amount').value = '';
+  document.getElementById('smart-preview').style.display = 'none';
+  document.getElementById('pay-total-display').style.display = 'none';
+
   document.getElementById('pay-modal').classList.add('open');
+  setTimeout(() => document.getElementById('smart-amount').focus(), 300);
 }
 
-function renderMonthSelector() {
+function calculateSmartPayment() {
   const g = data.groups[payingGroup];
   const member = g.members.find(m => m.id === payingId);
-  const selector = document.getElementById('month-selector');
+  const rate = g.rate;
 
-  if (currentMonthTab === 'past') {
-    // Past 12 months
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      let d = new Date(currentYear, currentMonth - i, 1);
-      months.push(getMonthKey(d.getFullYear(), d.getMonth()));
+  const inputAmount = parseInt(document.getElementById('smart-amount').value) || 0;
+  if (inputAmount <= 0) {
+    document.getElementById('smart-preview').style.display = 'none';
+    document.getElementById('pay-total-display').style.display = 'none';
+    smartResult = null;
+    return;
+  }
+
+  // Total available = input + existing surplus
+  let remaining = inputAmount + (member.surplusBalance || 0);
+  const totalAvailable = remaining;
+
+  const unpaidMonths = getUnpaidMonths(member, rate).sort();
+  const paidMonthsToAdd = [];
+  const advanceMonthsToAdd = [];
+  let newSurplus = 0;
+
+  // Step 1: Fill unpaid (old first)
+  for (const key of unpaidMonths) {
+    if (remaining >= rate) {
+      paidMonthsToAdd.push(key);
+      remaining -= rate;
+    } else break;
+  }
+
+  // Step 2: Fill advance months
+  for (let i = 1; i <= 24; i++) {
+    if (remaining < rate) break;
+    const d = new Date(currentYear, currentMonth + i, 1);
+    const key = getMonthKey(d.getFullYear(), d.getMonth());
+    if (!member.payments || !member.payments.includes(key)) {
+      advanceMonthsToAdd.push(key);
+      remaining -= rate;
     }
-    selector.innerHTML = months.map(key => {
-      const [y, m] = key.split('-').map(Number);
-      const paid = member.payments && member.payments.includes(key);
-      const sel = selectedMonths.includes(key);
-      return `<button class="month-btn ${paid ? 'paid-month' : sel ? 'selected' : ''}" id="mbtn-${key}"
-        onclick="toggleMonth('${key}')" ${paid ? 'disabled' : ''}>
-        ${MONTHS[m-1].substring(0,3)}<br><span style="font-size:9px">${y}</span>
-      </button>`;
-    }).join('');
-  } else {
-    // Future 12 months (advance)
-    const months = [];
-    for (let i = 1; i <= 12; i++) {
-      let d = new Date(currentYear, currentMonth + i, 1);
-      months.push(getMonthKey(d.getFullYear(), d.getMonth()));
-    }
-    selector.innerHTML = months.map(key => {
-      const [y, m] = key.split('-').map(Number);
-      const paid = member.payments && member.payments.includes(key);
-      const sel = selectedMonths.includes(key);
-      return `<button class="month-btn advance-future ${paid ? 'paid-month' : sel ? 'selected' : ''}" id="mbtn-${key}"
-        onclick="toggleMonth('${key}')" ${paid ? 'disabled' : ''}>
-        ${MONTHS[m-1].substring(0,3)}<br><span style="font-size:9px">${y}</span>
-      </button>`;
-    }).join('');
   }
-}
 
-function switchMonthTab(tab) {
-  currentMonthTab = tab;
-  document.getElementById('tab-past').classList.toggle('active', tab === 'past');
-  document.getElementById('tab-advance').classList.toggle('active', tab === 'advance');
-  document.getElementById('month-section-label').textContent = tab === 'past' ? 'বকেয়া মাস বেছে নিন:' : 'অগ্রিম মাস বেছে নিন:';
-  renderMonthSelector();
-}
+  // Step 3: Whatever left is surplus
+  newSurplus = remaining;
 
-function toggleMonth(key) {
-  const btn = document.getElementById('mbtn-' + key);
-  if (selectedMonths.includes(key)) {
-    selectedMonths = selectedMonths.filter(m => m !== key);
-    btn.classList.remove('selected');
-  } else {
-    selectedMonths.push(key);
-    btn.classList.add('selected');
+  smartResult = { paidMonthsToAdd, advanceMonthsToAdd, newSurplus, inputAmount, totalAvailable };
+
+  // Show preview
+  const previewEl = document.getElementById('smart-preview-content');
+  let html = '';
+
+  if (member.surplusBalance > 0) {
+    html += `<div style="color:#92400e;">💵 আগের জমা: ₹${member.surplusBalance} + নতুন: ₹${inputAmount} = মোট: ₹${totalAvailable}</div>`;
   }
-  updatePaySummary();
-}
 
-function updatePaySummary() {
-  const g = data.groups[payingGroup];
-  const surplus = parseInt(document.getElementById('surplus-amount').value) || 0;
-  const monthTotal = selectedMonths.length * g.rate;
-  const grandTotal = monthTotal + surplus;
-
-  const summaryEl = document.getElementById('pay-summary');
-  const totalEl = document.getElementById('pay-total-display');
-
-  if (selectedMonths.length > 0 || surplus > 0) {
-    summaryEl.style.display = 'block';
-    const advanceCount = selectedMonths.filter(k => {
-      const [y, m] = k.split('-').map(Number);
-      return new Date(y, m-1, 1) > new Date(currentYear, currentMonth, 1);
-    }).length;
-    const pastCount = selectedMonths.length - advanceCount;
-    let parts = [];
-    if (pastCount > 0) parts.push(`${pastCount} মাস বকেয়া`);
-    if (advanceCount > 0) parts.push(`${advanceCount} মাস অগ্রিম`);
-    document.getElementById('pay-summary-text').textContent = parts.join(' + ') || '';
-
-    totalEl.style.display = 'block';
-    totalEl.innerHTML = `মোট: <span style="color:var(--green);">₹${monthTotal}</span>${surplus > 0 ? ` + অতিরিক্ত: <span style="color:var(--gold);">₹${surplus}</span> = <span style="color:var(--green-dark);">₹${grandTotal}</span>` : ''}`;
-  } else {
-    summaryEl.style.display = 'none';
-    totalEl.style.display = 'none';
+  if (paidMonthsToAdd.length > 0) {
+    html += `<div style="color:#065f46;margin-top:4px;">✅ বকেয়া মাস (${paidMonthsToAdd.length}টি): `;
+    html += paidMonthsToAdd.map(k => { const [y,m] = k.split('-').map(Number); return `${MONTHS[m-1].substring(0,3)} ${y}`; }).join(', ');
+    html += ` = ₹${paidMonthsToAdd.length * rate}</div>`;
   }
+
+  if (advanceMonthsToAdd.length > 0) {
+    html += `<div style="color:#5b21b6;margin-top:4px;">🔮 অগ্রিম মাস (${advanceMonthsToAdd.length}টি): `;
+    html += advanceMonthsToAdd.map(k => { const [y,m] = k.split('-').map(Number); return `${MONTHS[m-1].substring(0,3)} ${y}`; }).join(', ');
+    html += ` = ₹${advanceMonthsToAdd.length * rate}</div>`;
+  }
+
+  if (newSurplus > 0) {
+    html += `<div style="color:#92400e;margin-top:4px;">💰 জমা থাকবে: ₹${newSurplus}</div>`;
+  }
+
+  if (paidMonthsToAdd.length === 0 && advanceMonthsToAdd.length === 0) {
+    html += `<div style="color:#92400e;">💰 পুরো ₹${totalAvailable} জমা থাকবে</div>`;
+  }
+
+  previewEl.innerHTML = html;
+  document.getElementById('smart-preview').style.display = 'block';
+  document.getElementById('pay-total-display').style.display = 'none';
 }
 
 function savePayment() {
-  const surplus = parseInt(document.getElementById('surplus-amount').value) || 0;
-  if (selectedMonths.length === 0 && surplus === 0) { showToast('কোনো মাস বা অতিরিক্ত টাকা দেননি!'); return; }
+  if (!smartResult || smartResult.inputAmount <= 0) {
+    showToast('টাকার পরিমাণ লিখুন!');
+    return;
+  }
 
   const g = data.groups[payingGroup];
   const member = g.members.find(m => m.id === payingId);
   if (!member.payments) member.payments = [];
-  selectedMonths.forEach(key => { if (!member.payments.includes(key)) member.payments.push(key); });
 
-  // Save surplus
-  if (surplus > 0) {
-    if (!member.surplusHistory) member.surplusHistory = [];
-    member.surplusHistory.push({ amount: surplus, date: new Date().toISOString(), by: currentUser.name || currentUser.username });
-    member.surplusBalance = (member.surplusBalance || 0) + surplus;
+  const { paidMonthsToAdd, advanceMonthsToAdd, newSurplus, inputAmount } = smartResult;
+
+  // Add months
+  [...paidMonthsToAdd, ...advanceMonthsToAdd].forEach(key => {
+    if (!member.payments.includes(key)) member.payments.push(key);
+  });
+
+  // Update surplus — reset old surplus, set new
+  const oldSurplus = member.surplusBalance || 0;
+  member.surplusBalance = newSurplus;
+
+  // Add to surplus history
+  if (!member.surplusHistory) member.surplusHistory = [];
+  if (inputAmount > 0) {
+    member.surplusHistory.push({
+      amount: inputAmount,
+      date: new Date().toISOString(),
+      by: currentUser.name || currentUser.username,
+      used: (paidMonthsToAdd.length + advanceMonthsToAdd.length) * g.rate,
+      leftover: newSurplus
+    });
   }
 
   saveData();
 
-  const advCount = selectedMonths.filter(k => {
-    const [y, m] = k.split('-').map(Number);
-    return new Date(y, m-1, 1) > new Date(currentYear, currentMonth, 1);
-  }).length;
-  const pastCount = selectedMonths.length - advCount;
-  let logMsg = `${member.name}-এর payment save করেছেন`;
-  if (pastCount > 0) logMsg += ` (${pastCount} মাস বকেয়া)`;
-  if (advCount > 0) logMsg += ` (${advCount} মাস অগ্রিম)`;
-  if (surplus > 0) logMsg += ` + ₹${surplus} অতিরিক্ত`;
+  let logMsg = `${member.name}-এর ₹${inputAmount} payment save করেছেন`;
+  if (paidMonthsToAdd.length > 0) logMsg += ` (${paidMonthsToAdd.length} মাস বকেয়া)`;
+  if (advanceMonthsToAdd.length > 0) logMsg += ` (${advanceMonthsToAdd.length} মাস অগ্রিম)`;
+  if (newSurplus > 0) logMsg += ` (₹${newSurplus} জমা)`;
   addLog(logMsg + ` — ${g.name}`);
 
-  selectedMonths = [];
   closeModal();
   showToast(`✅ ${member.name}-এর payment save হয়েছে!`);
   updateDashboard();
@@ -1134,8 +1155,7 @@ function savePayment() {
 
 function closeModal() {
   document.getElementById('pay-modal').classList.remove('open');
-  selectedMonths = [];
-  currentMonthTab = 'past';
+  smartResult = null;
 }
 
 // ========== DETAIL MODAL ==========
@@ -1214,7 +1234,7 @@ function openDetailModal(gid, id) {
     <div style="text-align:right;font-size:12px;font-weight:700;color:#92400e;margin-top:6px;">মোট: ₹${surplusBalance}</div>
     </div>` : ''}
 
-    ${canPay ? `<div style="margin-top:14px;"><button class="btn-primary" onclick="closeDetailModal();openPayModal('${gid}','${id}')">💳 Payment Save করুন</button></div>` : ''}
+    ${canPay ? `<div style="margin-top:14px;"><button class="btn-primary" onclick="closeDetailModal();openPayModal('${gid}','${id}')">💳 Payment করুন</button></div>` : ''}
   `;
   document.getElementById('detail-modal').classList.add('open');
 }
@@ -1567,6 +1587,9 @@ function updateWAPreview() {
 // ========== ACTIVITY LOG ==========
 function renderLog() {
   const el = document.getElementById('activity-log-list');
+  const clearBtn = document.getElementById('clear-log-btn');
+  if (clearBtn) clearBtn.style.display = currentUser.role === 'owner' ? '' : 'none';
+
   if (logData.length === 0) {
     el.innerHTML = '<div class="empty-state"><div class="emoji">📋</div><p>কোনো activity নেই।</p></div>';
     return;
@@ -1584,6 +1607,7 @@ function renderLog() {
 }
 
 function clearLog() {
+  if (currentUser.role !== 'owner') { showToast('❌ শুধু Owner log মুছতে পারবেন।'); return; }
   if (!confirm('সব log মুছবেন?')) return;
   logData = [];
   saveLog();
