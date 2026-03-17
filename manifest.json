@@ -1,13 +1,13 @@
 {
-  "name": "HTI Payment Tracker",
-  "short_name": "HTI Tracker",
+  "name": "HTI PayLink",
+  "short_name": "HTI PayLink",
   "description": "HIMAAYAT-E TEHREEK-E ISLAM Payment Tracker",
-  "start_url": "/hti-tracker/HTI_Tracker_v2.html",
+  "start_url": "/hti-paylink/HTI_Tracker_v2.html",
   "display": "standalone",
   "background_color": "#0f4424",
   "theme_color": "#0f4424",
   "orientation": "portrait",
-  "id": "/hti-tracker/HTI_Tracker_v2.html",
+  "id": "/hti-paylink/HTI_Tracker_v2.html",
   "icons": [
     {
       "src": "icon-192.png",
