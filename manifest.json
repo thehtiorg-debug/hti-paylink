@@ -1,0 +1,24 @@
+{
+  "name": "HTI Payment Tracker",
+  "short_name": "HTI Tracker",
+  "description": "HIMAAYAT-E TEHREEK-E ISLAM Payment Tracker",
+  "start_url": "/hti-tracker/HTI_Tracker_v2.html",
+  "display": "standalone",
+  "background_color": "#0f4424",
+  "theme_color": "#0f4424",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/thehtiorg-debug/hti-tracker/main/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/thehtiorg-debug/hti-tracker/main/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
