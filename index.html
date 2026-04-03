@@ -7,17 +7,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green: #1a6b3a; --green-dark: #0f4424; --green-light: #2d9a57;
-    --gold: #c8942a; --gold-light: #f0b942; --cream: #fdf8f0;
-    --white: #ffffff; --red: #c0392b; --gray: #6b7280; --gray-light: #f3f4f6;
-    --blue: #2563eb; --blue-light: #eff6ff; --blue-dark: #1d4ed8;
-    --shadow: 0 4px 20px rgba(0,0,0,0.12); --radius: 14px;
+    --green: #1a6b3a;
+    --green-dark: #0f4424;
+    --green-light: #2d9a57;
+    --gold: #c8942a;
+    --gold-light: #f0b942;
+    --cream: #fdf8f0;
+    --white: #ffffff;
+    --red: #c0392b;
+    --gray: #6b7280;
+    --gray-light: #f3f4f6;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --blue-dark: #1d4ed8;
+    --shadow: 0 4px 20px rgba(0,0,0,0.12);
+    --radius: 14px;
     --font: 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: var(--font); background: var(--cream); min-height: 100vh; color: #1a1a1a; overflow-x: hidden; }
 
   #splash-screen { position: fixed; inset: 0; background: linear-gradient(160deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s ease; }
+  #splash-screen.fade-out { opacity: 0; pointer-events: none; }
   .splash-icon { font-size: 64px; margin-bottom: 16px; animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
   .splash-title { font-family: 'Amiri', serif; font-size: 28px; color: var(--gold-light); letter-spacing: 2px; }
@@ -30,12 +41,12 @@
   .login-tab.active { background: white; color: var(--green-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
   .form-group { margin-bottom: 14px; }
   .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--green-dark); margin-bottom: 5px; }
-  .form-input, .form-select { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-family: var(--font); outline: none; background: white; }
+  .form-input, .form-select { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-family: var(--font); outline: none; transition: border-color 0.2s; background: white; }
   .form-input:focus, .form-select:focus { border-color: var(--blue); }
   .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%); color: white; border: none; border-radius: 11px; font-size: 15px; font-weight: 700; font-family: var(--font); cursor: pointer; box-shadow: 0 4px 14px rgba(26,107,58,0.35); }
   .btn-blue { background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%); box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
   .btn-google { background: white; color: var(--gray); border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  
+
   #main-app { display: none; }
   #main-app.active { display: block; }
   .header { background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%); color: white; padding: 10px 16px; position: sticky; top: 0; z-index: 100; }
@@ -45,59 +56,88 @@
   .tab { flex: 1; min-width: 70px; padding: 12px 8px; border: none; background: transparent; color: rgba(255,255,255,0.6); font-size: 12px; font-weight:600; font-family: var(--font); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: color 0.2s; }
   .tab.active { color: var(--gold-light); border-bottom-color: var(--gold-light); background: rgba(255,255,255,0.06); }
   .tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
-  
+
   .content { padding: 14px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
   .page { display: none; }
   .page.active { display: block; }
-  
+
   .card { background: white; border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
   .card-title { font-size: 15px; font-weight: 700; color: var(--green-dark); margin-bottom: 12px; }
-  .sum-card { background: white; border-radius: var(--radius); padding: 14px 12px; box-shadow: var(--shadow); text-align: center; border-top: 4px solid var(--green); }
+  .sum-card { background: white; border-radius: var(--radius); padding: 14px 12px; box-shadow: var(--shadow); text-align: center; border-top: 4px solid var(--green); cursor: pointer; transition: transform 0.15s; }
+  .sum-card:active { transform: scale(0.97); }
   .sum-card.gold { border-top-color: var(--gold); }
   .sum-card.red { border-top-color: var(--red); }
   .sum-card.blue { border-top-color: var(--blue); }
-  .sum-card .num { font-size: 24px; font-weight: 700; color: var(--green-dark); line-height: 1.2; }
+  .sum-card .num { font-size: 22px; font-weight: 700; color: var(--green-dark); line-height: 1.2; }
   .sum-card.gold .num { color: var(--gold); }
   .sum-card.red .num { color: var(--red); }
   .sum-card.blue .num { color: var(--blue); }
-  
+
   .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
-  .search-bar input { flex: 1; border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: 13px; outline: none; }
-  .btn-add { background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 20px; font-weight: 700; cursor: pointer; display:flex; align-items:center; justify-content:center; }
+  .search-bar input { flex: 1; border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-family: var(--font); outline: none; }
+  .search-bar input:focus { border-color: var(--blue); }
+  .btn-add { background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37,99,235,0.2); display:flex; align-items:center; justify-content:center; }
   .filter-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
   .filter-tabs::-webkit-scrollbar { display: none; }
-  .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid #e5e7eb; color: var(--gray); background: white; }
+  .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid #e5e7eb; color: var(--gray); background: white; transition: all 0.2s; }
   .filter-tab.active { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
   .member-card { background: white; border: 1px solid #e5e7eb; border-radius: var(--radius); padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .member-avatar { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: white; flex-shrink: 0; }
   .badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
   .badge-paid { background: #d1fae5; color: #065f46; }
   .badge-unpaid { background: #fee2e2; color: #991b1b; }
-  
-  .wa-btn { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #25D366; color: white; border: none; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; justify-content: space-between; margin-bottom: 8px; }
-  
+
+  .wa-btn { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #25D366; color: white; border: none; border-radius: 11px; font-size: 13px; font-weight: 700; font-family: var(--font); cursor: pointer; width: 100%; justify-content: space-between; margin-bottom: 8px; }
+
+  .due-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+  .due-rank { width: 26px; height: 26px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+  .bar-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .bar-label { font-size: 10px; color: var(--gray); width: 60px; flex-shrink: 0; }
+  .bar-wrap { flex: 1; background: #e5e7eb; border-radius: 6px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green), var(--green-light)); transition: width 0.5s; }
+
+  .log-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .log-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--blue-light); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .log-action { font-size: 13px; color: #1a1a1a; }
+
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
   .modal-overlay.active { display: flex; }
   .modal { background: white; border-radius: 20px 20px 0 0; padding: 22px 18px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease; }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .modal-title { font-size: 16px; font-weight: 700; color: var(--green-dark); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-  .modal-close { background: #f3f4f6; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; color: var(--gray); display:flex; align-items:center; justify-content:center; }
+  .modal-close { background: #f3f4f6; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; color: var(--gray); display:flex; align-items:center; justify-content:center; font-size: 12px; }
 
   .smart-amount-box { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-  .smart-amount-box input { flex: 1; background: transparent; border: none; outline: none; font-size: 22px; font-weight: 700; color: var(--green-dark); }
-  
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--green-dark); color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; z-index: 9990; opacity: 0; transition: opacity 0.3s; white-space: nowrap;}
+  .smart-amount-box input { flex: 1; background: transparent; border: none; outline: none; font-size: 22px; font-weight: 700; color: var(--green-dark); font-family: var(--font); }
+
+  .detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .detail-stat { background: var(--gray-light); border-radius: 10px; padding: 12px; text-align: center; }
+  .month-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; margin-bottom: 14px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--green-dark); color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; z-index: 9990; opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
   .toast.show { opacity: 1; }
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray); font-size:13px; }
-  
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray); }
+
   .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
   .loading-overlay.active { display: flex; }
   .spinner { width: 40px; height: 40px; border: 4px solid #f3f4f6; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Dashboard Details Row */
-  .dash-group-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--gray-light); border-radius: 8px; margin-bottom: 8px; cursor: pointer; border: 1px solid #e5e7eb; }
-  .dash-group-row:hover { border-color: var(--blue); }
-  .dash-detail-btn { background: #e5e7eb; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; color: var(--gray); }
+  /* Dashboard group breakdown */
+  .group-breakdown-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+  .group-breakdown-item:last-child { border-bottom: none; }
+  .group-breakdown-item:hover { background: rgba(255,255,255,0.05); border-radius: 6px; padding-left: 4px; }
+
+  /* Admin panel improvements */
+  .admin-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--gray-light); border-radius: 10px; margin-bottom: 8px; }
+  .admin-action-btn { border: none; border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 600; font-family: var(--font); cursor: pointer; }
+  .btn-edit { background: #dbeafe; color: var(--blue-dark); }
+  .btn-suspend { background: #fef3c7; color: #92400e; }
+  .btn-delete { background: #fee2e2; color: var(--red); }
+  .permission-chip { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; background: #d1fae5; color: #065f46; margin: 2px; }
+
+  /* Delete request badge */
+  .delete-request-badge { background: #fee2e2; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 </style>
 </head>
 <body>
@@ -105,19 +145,30 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div style="font-size:13px;font-weight:600;color:var(--gray);">লোড হচ্ছে...</div></div>
 <div class="toast" id="toast"></div>
 
-<div id="splash-screen"><div class="splash-icon">☪️</div><div class="splash-title">HTI PayLink</div></div>
+<div id="splash-screen">
+  <div class="splash-icon">☪️</div>
+  <div class="splash-title">HTI PayLink</div>
+</div>
+
 <div id="login-screen">
   <div class="login-box">
-    <div style="text-align:center;margin-bottom:24px;"><div style="font-size:36px;margin-bottom:10px;">🔐</div><h1 style="color:var(--green-dark);font-size:22px;">HTI PayLink</h1><p style="font-size:11px;color:var(--gray);">আপনার তথ্য দিয়ে প্রবেশ করুন</p></div>
-    <div class="login-tabs"><div class="login-tab active" onclick="switchLoginTab('owner')">Owner</div><div class="login-tab" onclick="switchLoginTab('admin')">Admin</div></div>
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+      <h1 style="color:var(--green-dark);font-size:22px;">HTI PayLink</h1>
+      <p style="font-size:11px;color:var(--gray);">আপনার তথ্য দিয়ে প্রবেশ করুন</p>
+    </div>
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchLoginTab('owner')">Owner</div>
+      <div class="login-tab" onclick="switchLoginTab('admin')">Admin</div>
+    </div>
     <div id="ownerLoginForm">
       <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="ownerUsername"></div>
       <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="ownerPassword"></div>
       <button class="btn-primary" onclick="ownerLogin()">লগইন করুন</button>
     </div>
     <div id="adminLoginForm" style="display:none;text-align:center;">
-      <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">আপনার Gmail দিয়ে লগইন করুন</p>
-      <button class="btn-primary btn-google" onclick="adminGoogleLogin()">Google দিয়ে Login</button>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">আপনার Gmail দিয়ে লগইন করুন</p>
+      <button class="btn-primary btn-google" onclick="adminGoogleLogin()">Google দিয়ে Login</button>
     </div>
   </div>
 </div>
@@ -127,486 +178,1180 @@
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:36px;height:36px;border:2px solid var(--gold-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">☪️</div>
-        <div><div style="font-family:'Amiri',serif;font-size:16px;font-weight:700;color:var(--gold-light);">HTI PayLink</div><div style="font-size:9px;opacity:0.8;">HIMAAYAT-E TEHREEK-E ISLAM</div></div>
+        <div>
+          <div style="font-family:'Amiri',serif;font-size:16px;font-weight:700;color:var(--gold-light);">HTI PayLink</div>
+          <div style="font-size:9px;opacity:0.8;">HIMAAYAT-E TEHREEK-E ISLAM</div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;"><span class="header-user-badge" id="headerRole"></span><button onclick="logout()" style="background:none;border:none;color:white;cursor:pointer;font-size:16px;">🚪</button></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="header-user-badge" id="headerRole"></span>
+        <button onclick="logout()" style="background:none;border:none;color:white;cursor:pointer;font-size:16px;">🚪</button>
+      </div>
     </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="showPage('dashboard',this)"><span class="tab-icon">📊</span>Dashboard</button>
-    <button class="tab" onclick="showPage('members',this)"><span class="tab-icon">👥</span>সদস্য</button>
-    <button class="tab" onclick="showPage('whatsapp',this)"><span class="tab-icon">💬</span>Reminder</button>
-    <button class="tab" onclick="showPage('report',this)"><span class="tab-icon">📈</span>Report</button>
-    <button class="tab" id="tab-admin" onclick="showPage('admin',this)" style="display:none;"><span class="tab-icon">⚙️</span>Admin</button>
+    <button class="tab active" onclick="showPage('dashboard',this)">
+      <span class="tab-icon">📊</span>Dashboard
+    </button>
+    <button class="tab" onclick="showPage('members',this)">
+      <span class="tab-icon">👥</span>সদস্য
+    </button>
+    <button class="tab" onclick="showPage('whatsapp',this)">
+      <span class="tab-icon">💬</span>Reminder
+    </button>
+    <button class="tab" onclick="showPage('report',this)">
+      <span class="tab-icon">📈</span>Report
+    </button>
+    <button class="tab" id="tab-admin" onclick="showPage('admin',this)" style="display:none;">
+      <span class="tab-icon">⚙️</span>Admin
+    </button>
+    <button class="tab" onclick="showPage('log',this)">
+      <span class="tab-icon">📋</span>Log
+    </button>
   </div>
 
   <div class="content">
-    
+
+    <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
+      <!-- Monthly box -->
       <div class="card">
-        <div class="card-title">📅 এই মাসের হিসাব (Current Month)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-          <div class="sum-card gold"><div class="num" id="dashCollected">₹0</div><div style="font-size:12px;color:var(--gray);">আদায়</div></div>
-          <div class="sum-card red"><div class="num" id="dashDueAmt">₹0</div><div style="font-size:12px;color:var(--gray);">মোট বাকি</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">📅 এই মাসের হিসাব</div>
+          <div style="font-size:10px;color:var(--gray);">ক্লিক করুন বিস্তারিত দেখতে</div>
         </div>
-        <div style="font-size:12px;font-weight:700;color:var(--gray);margin-bottom:8px;">Group-wise breakdown:</div>
-        <div id="dashMonthGroupBreakdown"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="sum-card"><div class="num" id="dashTotalMembers">0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">মোট সদস্য</div></div>
+          <div class="sum-card gold"><div class="num" id="dashCollected">₹0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">এই মাসে আদায়</div></div>
+          <div class="sum-card red" onclick="showDashboardDetail('monthly')"><div class="num" id="dashDueMembers">0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">বাকি আছেন</div></div>
+          <div class="sum-card blue" onclick="showDashboardDetail('monthly')"><div class="num" id="dashDueAmt">₹0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">মোট বাকি টাকা</div></div>
+        </div>
+        <!-- Monthly group breakdown -->
+        <div id="dashMonthlyGroupBreakdown" style="display:none;margin-top:8px;"></div>
+        <div id="dashMonthlyToggle" style="text-align:center;cursor:pointer;font-size:11px;color:var(--blue);font-weight:600;padding:4px;" onclick="toggleMonthlyBreakdown()">▼ Group ভিত্তিক বিস্তারিত</div>
       </div>
+
+      <!-- Grand total box -->
       <div class="card" style="background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;">
-        <div style="font-size:13px;font-weight:700;color:var(--gold-light);margin-bottom:10px;">📈 সর্বমোট Collection (শুরু থেকে)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;margin-bottom:14px;">
-          <div style="background:rgba(255,255,255,0.1);padding:14px;border-radius:10px;"><div style="font-size:22px;font-weight:700;color:var(--gold-light);" id="grandCollected">₹0</div><div style="font-size:11px;opacity:0.9;">মোট আদায়</div></div>
-          <div style="background:rgba(255,255,255,0.1);padding:14px;border-radius:10px;"><div style="font-size:22px;font-weight:700;color:#fca5a5;" id="grandDue">₹0</div><div style="font-size:11px;opacity:0.9;">মোট বাকি</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;color:var(--gold-light);">📈 সর্বমোট Collection (শুরু থেকে আজ পর্যন্ত)</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.7);">ক্লিক বিস্তারিত</div>
         </div>
-        <div style="font-size:12px;font-weight:700;color:var(--gold-light);margin-bottom:8px;">Group-wise breakdown:</div>
-        <div id="dashOverallGroupBreakdown"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;margin-bottom:12px;">
+          <div style="background:rgba(255,255,255,0.1);padding:14px;border-radius:10px;cursor:pointer;" onclick="showDashboardDetail('grand')">
+            <div style="font-size:22px;font-weight:700;color:var(--gold-light);" id="grandCollected">₹0</div>
+            <div style="font-size:11px;margin-top:4px;opacity:0.9;">মোট আদায়</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.1);padding:14px;border-radius:10px;cursor:pointer;" onclick="showDashboardDetail('grand')">
+            <div style="font-size:22px;font-weight:700;color:#fca5a5;" id="grandDue">₹0</div>
+            <div style="font-size:11px;margin-top:4px;opacity:0.9;">মোট বাকি</div>
+          </div>
+        </div>
+        <!-- Grand group breakdown -->
+        <div id="dashGrandGroupBreakdown" style="display:none;"></div>
+        <div id="dashGrandToggle" style="text-align:center;cursor:pointer;font-size:11px;color:var(--gold-light);font-weight:600;padding:4px;" onclick="toggleGrandBreakdown()">▼ Group ভিত্তিক বিস্তারিত</div>
       </div>
     </div>
 
+    <!-- MEMBERS -->
     <div class="page" id="page-members">
       <div id="memberListView">
         <div class="filter-tabs" id="groupPills"></div>
         <div class="search-bar">
-          <input type="text" id="memberSearch" placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." oninput="renderMembers()">
+          <input type="text" id="memberSearch" placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." oninput="renderMembers()">
           <button class="btn-add" style="width:44px; padding:0;" onclick="openAddMemberModal()">+</button>
         </div>
         <div class="filter-tabs">
           <button class="filter-tab active" onclick="setMemberFilter('all',this)">সবাই</button>
-          <button class="filter-tab" onclick="setMemberFilter('paid',this)">আদায়</button>
+          <button class="filter-tab" onclick="setMemberFilter('paid',this)">আদায়</button>
           <button class="filter-tab" onclick="setMemberFilter('unpaid',this)">বাকি</button>
         </div>
         <div id="memberList"></div>
       </div>
       <div id="memberDetailView" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <div style="color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;" onclick="backToMembers()">← ফিরে যান</div>
-          <button id="delMemberBtn" style="background:#fee2e2;color:var(--red);border:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">🗑 Delete</button>
-        </div>
+        <div style="color:var(--blue);font-size:13px;font-weight:600;margin-bottom:14px;cursor:pointer;display:inline-block;" onclick="backToMembers()">← ফিরে যান</div>
         <div class="card" id="detailContent"></div>
       </div>
     </div>
 
+    <!-- WHATSAPP -->
     <div class="page" id="page-whatsapp">
       <div class="card">
         <div class="card-title">💬 WhatsApp Reminder</div>
-        <div class="form-group"><label class="form-label">Group</label><select class="form-select" id="waGroup" onchange="updateWAPreview()"></select></div>
+        <div class="form-group"><label class="form-label">Group বেছে নিন</label><select class="form-select" id="waGroup" onchange="updateWAPreview()"><option value="all">সবাইকে (সব Group)</option></select></div>
         <div class="form-group"><label class="form-label">কাকে পাঠাবেন?</label><select class="form-select" id="waFilter" onchange="updateWAPreview()"><option value="due">শুধু যারা বাকি আছেন</option><option value="all">সবাইকে</option></select></div>
       </div>
+      <div class="card"><div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:8px;">Message Preview (প্রথম জনের):</div><div id="waPreview" style="font-size:12px;color:var(--gray);background:#f9fafb;padding:12px;border-radius:8px;white-space:pre-wrap;line-height:1.6;"></div></div>
       <div id="waButtons"></div>
     </div>
 
+    <!-- REPORT -->
     <div class="page" id="page-report">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="card-title" style="margin:0;">📥 Data Export</div>
-          <button class="btn-primary btn-blue" style="width:auto;padding:8px 16px;font-size:12px;" onclick="openModal('exportModal')">📤 Export Option</button>
+      <div class="card" style="background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:14px;font-weight:700;color:var(--gold-light);">💰 সর্বমোট হিসাব</div>
+          <button class="btn-primary btn-blue" style="width:auto;padding:6px 12px;font-size:11px;" onclick="openExportModal()">📤 Export</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:rgba(255,255,255,0.12);padding:12px;border-radius:10px;text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--gold-light);" id="rptCol">₹0</div><div style="font-size:10px;margin-top:4px;">মোট আদায়</div></div>
+          <div style="background:rgba(255,255,255,0.12);padding:12px;border-radius:10px;text-align:center;"><div style="font-size:22px;font-weight:700;color:#fca5a5;" id="rptDue">₹0</div><div style="font-size:10px;margin-top:4px;">মোট বাকি</div></div>
         </div>
       </div>
-      <div class="card"><div class="card-title">⚠️ বকেয়া তালিকা</div><div id="rptDueList"></div></div>
+      <div class="card">
+        <div class="card-title">⚠️ বকেয়া তালিকা (বেশি থেকে কম)</div>
+        <div id="rptDueList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 নিয়মিত সদস্য (কখনো বকেয়া রাখেননি)</div>
+        <div id="rptRegularList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 মাসিক Collection ইতিহাস</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <select class="form-select" id="rptFrom" onchange="renderMonthlyChart()" style="padding:8px;font-size:12px;"></select>
+          <select class="form-select" id="rptTo" onchange="renderMonthlyChart()" style="padding:8px;font-size:12px;"></select>
+        </div>
+        <div id="rptMonthlyChart"></div>
+      </div>
     </div>
 
+    <!-- ADMIN -->
     <div class="page" id="page-admin">
-      <div class="card" id="adminRequestsCard" style="display:none; border:2px solid var(--red);">
-        <div class="card-title" style="color:var(--red);">🔔 Delete Requests</div>
-        <div id="adminReqList"></div>
+      <!-- Delete Requests (owner only) -->
+      <div class="card" id="deleteRequestsCard" style="display:none;">
+        <div class="card-title" style="color:var(--red);">🗑 মুছে ফেলার Request</div>
+        <div id="deleteRequestList"></div>
       </div>
+
+      <!-- Groups -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div class="card-title" style="margin:0;">⚙️ Groups</div>
-          <button class="btn-add" style="width:30px;height:30px;font-size:18px;padding:0;" onclick="promptAddGroup()">+</button>
+          <button class="btn-add" style="width:30px;height:30px;font-size:18px;padding:0;" id="addGroupBtn" onclick="openGroupModal()">+</button>
         </div>
         <div id="adminGroupList"></div>
       </div>
-      <div class="card">
+
+      <!-- Admins -->
+      <div class="card" id="adminUsersCard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div class="card-title" style="margin:0;">👮 Admins</div>
-          <button class="btn-add" style="width:30px;height:30px;font-size:18px;padding:0;" onclick="openAdminModal()">+</button>
+          <button class="btn-add" style="width:30px;height:30px;font-size:18px;padding:0;" id="addAdminBtn" onclick="openAddAdminModal()">+</button>
         </div>
         <div id="adminUserList"></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="page" id="page-log">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">📋 Activity Log</div>
+          <button id="clearLogBtn" style="background:#fee2e2;color:var(--red);border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:none;" onclick="clearLog()">🗑 মুছুন</button>
+        </div>
+        <div id="logList"></div>
       </div>
     </div>
 
   </div>
 </div>
 
-<div class="modal-overlay" id="memberModal"><div class="modal">
-  <div class="modal-title"><span>নতুন সদস্য</span><button class="modal-close" onclick="closeModal('memberModal')">✕</button></div>
-  <div class="form-group"><label class="form-label">নাম *</label><input type="text" class="form-input" id="mName"></div>
-  <div class="form-group"><label class="form-label">WhatsApp নম্বর</label><input type="tel" class="form-input" id="mPhone"></div>
-  <div class="form-group"><label class="form-label">Group *</label><select class="form-select" id="mGroup"></select></div>
-  <div class="form-group"><label class="form-label">শুরুর মাস *</label><select class="form-select" id="mStartMonth"></select></div>
-  <button class="btn-primary" onclick="saveMember()" style="margin-top:10px;">✅ সংরক্ষণ করুন</button>
-</div></div>
+<!-- ===== MODALS ===== -->
 
-<div class="modal-overlay" id="paymentModal"><div class="modal">
-  <div class="modal-title"><span>Payment Update</span><button class="modal-close" onclick="closeModal('paymentModal')">✕</button></div>
-  <div style="font-size:12px;color:var(--gray);margin-bottom:12px;" id="payModalSub"></div>
-  <div class="smart-amount-box"><span style="font-size:22px;font-weight:700;">₹</span><input type="number" id="smartAmount" placeholder="0" min="0" oninput="calcPayment()"></div>
-  <div id="smartPreview" style="display:none;background:#f9fafb;padding:12px;border-radius:8px;font-size:12px;line-height:1.6;margin-bottom:14px;border:1px solid #e5e7eb;"></div>
-  <button class="btn-primary" onclick="savePayment()">✅ Update & Send Receipt</button>
-</div></div>
-
-<div class="modal-overlay" id="exportModal"><div class="modal">
-  <div class="modal-title"><span>📤 Export Options</span><button class="modal-close" onclick="closeModal('exportModal')">✕</button></div>
-  <div style="font-size:13px;margin-bottom:16px;">Date Range:</div>
-  <div style="display:flex;gap:10px;margin-bottom:16px;"><select class="form-select" id="expFrom"></select><select class="form-select" id="expTo"></select></div>
-  <div style="display:flex;gap:10px;">
-    <button class="btn-primary" style="background:#10b981;" onclick="doExport('excel')">📊 Excel (.csv)</button>
-    <button class="btn-primary btn-blue" onclick="doExport('sheet')">📑 Google Sheet</button>
+<!-- Member Modal -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-title"><span id="memberModalTitle">নতুন সদস্য</span><button class="modal-close" onclick="closeModal('memberModal')">✕</button></div>
+    <div class="form-group"><label class="form-label">নাম *</label><input type="text" class="form-input" id="mName" placeholder="পুরো নাম"></div>
+    <div class="form-group"><label class="form-label">WhatsApp নম্বর</label><input type="tel" class="form-input" id="mPhone" placeholder="যেমন: 9876543210"></div>
+    <div class="form-group"><label class="form-label">Group *</label><select class="form-select" id="mGroup"></select></div>
+    <!-- FIX #6: Month selection when adding member -->
+    <div class="form-group"><label class="form-label">যোগদানের মাস *</label><select class="form-select" id="mStartMonth"></select></div>
+    <button class="btn-primary" onclick="saveMember()" style="margin-top:10px;">✅ সংরক্ষণ করুন</button>
   </div>
-</div></div>
+</div>
 
-<div class="modal-overlay" id="addAdminModal"><div class="modal">
-  <div class="modal-title"><span id="adminModalTitle">Admin Manage</span><button class="modal-close" onclick="closeModal('addAdminModal')">✕</button></div>
-  <div class="form-group"><label class="form-label">নাম</label><input type="text" class="form-input" id="aName"></div>
-  <div class="form-group"><label class="form-label">Gmail</label><input type="email" class="form-input" id="aEmail"></div>
-  <div class="form-group"><label class="form-label">Permissions (Select Groups)</label><div id="aPerms" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div></div>
-  <button class="btn-primary" onclick="saveAdmin()">✅ Save Admin</button>
-</div></div>
+<!-- Payment Modal -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <div class="modal-title"><span id="payModalTitle">Payment Save করুন</span><button class="modal-close" onclick="closeModal('paymentModal')">✕</button></div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:12px;" id="payModalSub"></div>
+    <div class="smart-amount-box">
+      <span style="font-size:22px;font-weight:700;color:var(--green-dark);">₹</span>
+      <input type="number" id="smartAmount" placeholder="0" min="0" oninput="calcPayment()">
+    </div>
+    <!-- FIX #7: Show exact months being covered -->
+    <div id="smartPreview" style="display:none;background:#f9fafb;padding:12px;border-radius:8px;font-size:12px;line-height:1.6;margin-bottom:14px;border:1px solid #e5e7eb;"></div>
+    <button class="btn-primary" onclick="savePayment()">✅ Payment Save করুন</button>
+  </div>
+</div>
 
-<div class="modal-overlay" id="dashDetailModal"><div class="modal" style="background:var(--gray-light)">
-  <div class="modal-title"><span id="ddTitle"></span><button class="modal-close" onclick="closeModal('dashDetailModal')">✕</button></div>
-  <div id="ddContent"></div>
-</div></div>
+<!-- Export Modal — FIX #1: Separate Excel (.xlsx) and Google Sheet (opens Sheets) -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-title"><span>📤 Data Export</span><button class="modal-close" onclick="closeModal('exportModal')">✕</button></div>
+    <div style="font-size:13px;font-weight:600;color:var(--green-dark);margin-bottom:8px;">তারিখ নির্বাচন করুন:</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <select class="form-select" id="expFrom" style="padding:8px;font-size:12px;"></select>
+      <select class="form-select" id="expTo" style="padding:8px;font-size:12px;"></select>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--green-dark);margin-bottom:12px;">কোথায় Export করবেন?</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-primary" style="background:#10b981;flex:1;" onclick="doExport('excel')">📊 Excel (.csv)</button>
+      <button class="btn-primary btn-blue" style="flex:1;" onclick="doExport('sheet')">📑 Google Sheet</button>
+    </div>
+    <div style="font-size:10px;color:var(--gray);margin-top:8px;text-align:center;">Excel = CSV ডাউনলোড • Google Sheet = Sheets-এ খুলবে</div>
+  </div>
+</div>
 
+<!-- Group Modal (Add/Edit) — FIX #2: Edit group name and amount -->
+<div class="modal-overlay" id="groupModal">
+  <div class="modal">
+    <div class="modal-title"><span id="groupModalTitle">নতুন Group</span><button class="modal-close" onclick="closeModal('groupModal')">✕</button></div>
+    <input type="hidden" id="editingGroupId">
+    <div class="form-group"><label class="form-label">Group-এর নাম *</label><input type="text" class="form-input" id="groupName" placeholder="যেমন: HTI JAZBA 100"></div>
+    <div class="form-group"><label class="form-label">মাসিক চাঁদার পরিমাণ (₹) *</label><input type="number" class="form-input" id="groupAmount" placeholder="যেমন: 100" min="1"></div>
+    <div class="form-group">
+      <label class="form-label">রঙ</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="colorPicker">
+        <div class="color-opt" data-color="#1a6b3a" style="width:28px;height:28px;border-radius:50%;background:#1a6b3a;cursor:pointer;border:3px solid transparent;" onclick="selectColor('#1a6b3a',this)"></div>
+        <div class="color-opt" data-color="#2563eb" style="width:28px;height:28px;border-radius:50%;background:#2563eb;cursor:pointer;border:3px solid transparent;" onclick="selectColor('#2563eb',this)"></div>
+        <div class="color-opt" data-color="#c8942a" style="width:28px;height:28px;border-radius:50%;background:#c8942a;cursor:pointer;border:3px solid transparent;" onclick="selectColor('#c8942a',this)"></div>
+        <div class="color-opt" data-color="#c0392b" style="width:28px;height:28px;border-radius:50%;background:#c0392b;cursor:pointer;border:3px solid transparent;" onclick="selectColor('#c0392b',this)"></div>
+        <div class="color-opt" data-color="#7c3aed" style="width:28px;height:28px;border-radius:50%;background:#7c3aed;cursor:pointer;border:3px solid transparent;" onclick="selectColor('#7c3aed',this)"></div>
+        <div class="color-opt" data-color="#0891b2" style="width:28px;height:28px;border-radius:50%;background:#0891b2;cursor:pointer;border:3px solid transparent;" onclick="selectColor('#0891b2',this)"></div>
+      </div>
+      <input type="hidden" id="groupColor" value="#2563eb">
+    </div>
+    <button class="btn-primary" onclick="saveGroup()" style="margin-top:10px;">✅ সংরক্ষণ করুন</button>
+  </div>
+</div>
+
+<!-- Admin Modal (Add/Edit) — FIX #2: Group permissions + FIX #4 -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <div class="modal-title"><span id="adminModalTitle">নতুন Admin যোগ করুন</span><button class="modal-close" onclick="closeModal('adminModal')">✕</button></div>
+    <input type="hidden" id="editingAdminEmail">
+    <div class="form-group"><label class="form-label">নাম *</label><input type="text" class="form-input" id="adminName" placeholder="Admin-এর নাম"></div>
+    <div class="form-group"><label class="form-label">Gmail *</label><input type="email" class="form-input" id="adminEmail" placeholder="admin@gmail.com"></div>
+    <div class="form-group">
+      <label class="form-label">দায়িত্বপ্রাপ্ত Group(গুলো) *</label>
+      <div id="adminGroupCheckboxes" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Permission</label>
+      <div id="adminPermissionCheckboxes" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="perm_addMember" checked> সদস্য যোগ করা</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="perm_payment" checked> Payment নেওয়া</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="perm_reminder" checked> WhatsApp Reminder পাঠানো</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;"><input type="checkbox" id="perm_report"> Report দেখা</label>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveAdmin()" style="margin-top:10px;">✅ সংরক্ষণ করুন</button>
+  </div>
+</div>
+
+<!-- Dashboard Detail Modal -->
+<div class="modal-overlay" id="dashDetailModal">
+  <div class="modal">
+    <div class="modal-title"><span id="dashDetailTitle">বিস্তারিত হিসাব</span><button class="modal-close" onclick="closeModal('dashDetailModal')">✕</button></div>
+    <div id="dashDetailContent"></div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-// ===== SETUP & DATA =====
+// ===== STATE =====
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHEPNibxKvpmbbsNMgF4CgTdZHWO1oza8kjvDx30wcS4-3hhquRXKF7XCLR6G5MGl_/exec";
+const API_KEY = "HTI@Secure#2025!";
+const CLIENT_ID = "880382507682-u6h5c5dkn3gkhakaq0srj4kde6ks44ms.apps.googleusercontent.com";
+
 const MONTHS_BN = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
 
-let appData = { members:[], payments:[], admins:[], groups:[], requests:[] };
-let currentUser = null, currentRole = null;
-let activeGroupId = null, memberFilter = 'all', payingMemberId = null, smartResult = null;
-let editingAdmin = null;
+let appData = { members:[], payments:[], admins:[], groups:[], activityLog:[], deleteRequests:[] };
+let currentUser = null, currentRole = null, currentAdminData = null;
+let activeGroupId = null, memberFilter = 'all';
+let payingMemberId = null, smartResult = null;
+let selectedGroupColor = '#2563eb';
+let monthlyBreakdownOpen = false, grandBreakdownOpen = false;
 
-const CY = new Date().getFullYear(), CM = new Date().getMonth();
+// Date Helpers
+const CY = new Date().getFullYear();
+const CM = new Date().getMonth();
 function monthKey(y,m) { return y+'-'+String(m+1).padStart(2,'0'); }
 function monthLabel(k) { const [y,m]=k.split('-'); return MONTHS_BN[parseInt(m)-1]+' '+y; }
 function currentMonthKey() { return monthKey(CY,CM); }
-function getAllMonths() { const m=[]; for(let y=2024;y<=CY+1;y++) for(let i=0;i<12;i++) m.push(monthKey(y,i)); return m; }
+function getAllMonths() {
+  const m=[]; for(let y=2024;y<=CY+1;y++) for(let i=0;i<12;i++) m.push(monthKey(y,i)); return m;
+}
 
-// LOGIC HELPERS
+// Logic Helpers
 function getPaidMonths(mId) { return appData.payments.filter(p=>p.memberId===mId).map(p=>p.month); }
 function getUnpaidMonths(m) {
-  const paid=getPaidMonths(m.id), start=m.startMonth||'2024-01', [sy,sm]=start.split('-').map(Number), unp=[];
-  for(let y=sy; y<=CY; y++) { let s=(y===sy)?sm-1:0, e=(y===CY)?CM:11; for(let mo=s; mo<=e; mo++) { const k=monthKey(y,mo); if(!paid.includes(k)) unp.push(k); } }
+  const paid = getPaidMonths(m.id);
+  const start = m.startMonth || '2024-01';
+  const [sy,sm] = start.split('-').map(Number);
+  const unp = [];
+  for(let y=sy; y<=CY; y++) {
+    let s = (y===sy)?sm-1:0;
+    let e = (y===CY)?CM:11;
+    for(let mo=s; mo<=e; mo++) { const k=monthKey(y,mo); if(!paid.includes(k)) unp.push(k); }
+  }
   return unp;
 }
-function hasPerm(gId) { return currentRole==='owner' || (currentUser.permissions && currentUser.permissions.includes(gId)); }
 
-// UI HELPERS
+// Admin permission check
+function adminCanDo(perm) {
+  if(currentRole==='owner') return true;
+  if(!currentAdminData) return false;
+  return currentAdminData.permissions && currentAdminData.permissions[perm];
+}
+function adminCanEditGroup(groupId) {
+  if(currentRole==='owner') return true;
+  if(!currentAdminData) return false;
+  return currentAdminData.groups && currentAdminData.groups.includes(groupId);
+}
+
+// UI Helpers
+function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function selectColor(c, el) {
+  selectedGroupColor = c;
+  document.querySelectorAll('.color-opt').forEach(x=>x.style.border='3px solid transparent');
+  el.style.border = '3px solid #1a1a1a';
+  document.getElementById('groupColor').value = c;
+}
 
-// INIT
+// ===== INIT & AUTH =====
 window.onload = () => {
-  setTimeout(()=>{
-    document.getElementById('splash-screen').style.opacity='0';
-    setTimeout(()=>{
-      document.getElementById('splash-screen').style.display='none';
-      const u=sessionStorage.getItem('htiUser');
-      if(u) { const p=JSON.parse(u); currentUser=p.user; currentRole=p.role; startApp(); }
+  setTimeout(() => {
+    document.getElementById('splash-screen').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash-screen').style.display = 'none';
+      const u = sessionStorage.getItem('htiUser');
+      if(u) { const p=JSON.parse(u); currentUser=p.user; currentRole=p.role; currentAdminData=p.adminData||null; startApp(); }
       else document.getElementById('login-screen').classList.add('active');
-    },600);
-  }, 1000);
-};
+    }, 600);
+  }, 1500);
+}
 
 function switchLoginTab(t) {
   document.querySelectorAll('.login-tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='owner')||(i===1&&t==='admin')));
   document.getElementById('ownerLoginForm').style.display = t==='owner'?'block':'none';
   document.getElementById('adminLoginForm').style.display = t==='admin'?'block':'none';
 }
+
 function ownerLogin() {
   if(document.getElementById('ownerUsername').value==='Samsad' && document.getElementById('ownerPassword').value==='@#Samsad#@') {
-    currentUser = {name:'Samsad', email:'owner', permissions:[]}; currentRole='owner';
+    currentUser = {name:'Samsad',email:'owner'}; currentRole='owner';
     sessionStorage.setItem('htiUser',JSON.stringify({user:currentUser,role:currentRole})); startApp();
   } else showToast('ভুল Username/Password');
 }
+
 function adminGoogleLogin() {
-  // Mock login for functionality testing. (Use Google API in real)
-  const eml = prompt("Admin testing - Email din:");
-  const a = appData.admins.find(x=>x.email===eml);
-  if(a && !a.suspended) { currentUser=a; currentRole='admin'; sessionStorage.setItem('htiUser',JSON.stringify({user:currentUser,role:currentRole})); startApp(); }
-  else showToast('Admin access nei ba suspended.');
+  google.accounts.id.initialize({ client_id: CLIENT_ID, callback: handleGoogleRes });
+  google.accounts.id.prompt();
 }
+
+async function handleGoogleRes(res) {
+  showLoading();
+  const payload = JSON.parse(atob(res.credential.split('.')[1]));
+  await fetchBackend();
+  hideLoading();
+  const a = appData.admins.find(x=>x.email===payload.email && !x.suspended);
+  if(a) {
+    currentUser={name:a.name||payload.email, email:a.email};
+    currentRole='admin';
+    currentAdminData = a;
+    sessionStorage.setItem('htiUser',JSON.stringify({user:currentUser,role:currentRole,adminData:a}));
+    startApp();
+  }
+  else showToast('Admin access নেই বা suspended');
+}
+
 function logout() { sessionStorage.clear(); window.location.reload(); }
 
+async function fetchBackend() {
+  try {
+    const r = await fetch(SCRIPT_URL+'?apiKey='+API_KEY+'&action=getData');
+    const d = await r.json();
+    if(d.success) appData = d.data;
+    if(!appData.members) appData.members=[];
+    if(!appData.payments) appData.payments=[];
+    if(!appData.groups) appData.groups=[{id:'g1',name:'HTI SPECIAL',amount:100,color:'#1a6b3a'}];
+    if(!appData.activityLog) appData.activityLog=[];
+    if(!appData.deleteRequests) appData.deleteRequests=[];
+  } catch(e) {}
+}
+
 async function startApp() {
-  document.getElementById('login-screen').classList.remove('active'); document.getElementById('main-app').classList.add('active');
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('main-app').classList.add('active');
   document.getElementById('headerRole').textContent = currentRole==='owner'?'👑 Owner':'👮 Admin';
-  if(!appData.groups.length) { // Mock Data Load
-    appData.groups=[{id:'g1',name:'HTI JAZBA 100',amount:100,color:'#1a6b3a'}, {id:'g2',name:'MSA Golden',amount:200,color:'#c8942a'}];
-    appData.admins=[{email:'admin@gmail.com',name:'Admin Bhai',permissions:['g1'],suspended:false}];
-    appData.members=[{id:'m1',name:'Samsad',phone:'9876543210',groupId:'g1',startMonth:'2026-01'}];
-    appData.requests=[];
+  showLoading(); await fetchBackend(); hideLoading();
+
+  if(currentRole==='owner') {
+    document.getElementById('tab-admin').style.display = 'block';
+    document.getElementById('clearLogBtn').style.display = 'block';
+  } else if(currentRole==='admin') {
+    // Admin can see admin tab too (for their group management)
+    document.getElementById('tab-admin').style.display = 'block';
   }
-  if(currentRole==='owner') document.getElementById('tab-admin').style.display='block';
-  
-  const ms=getAllMonths(), opts=ms.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
-  document.getElementById('mStartMonth').innerHTML=opts; document.getElementById('mStartMonth').value=currentMonthKey();
-  document.getElementById('expFrom').innerHTML=opts; document.getElementById('expTo').innerHTML=opts; document.getElementById('expFrom').value='2024-01'; document.getElementById('expTo').value=currentMonthKey();
-  
-  showPage('dashboard', document.querySelector('.tab.active'));
+
+  initSelects();
+  updateDashboard(); renderGroupPills(); renderMembers(); renderWA();
 }
 
 function showPage(p, el) {
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active'); if(el) el.classList.add('active');
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active'); el.classList.add('active');
   if(p==='dashboard') updateDashboard();
   if(p==='members') { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; renderGroupPills(); renderMembers(); }
-  if(p==='whatsapp') { document.getElementById('waGroup').innerHTML='<option value="all">সবাইকে</option>'+appData.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join(''); updateWAPreview(); }
+  if(p==='whatsapp') renderWA();
   if(p==='report') renderReport();
   if(p==='admin') renderAdminPanel();
+  if(p==='log') renderLog();
 }
 
-// ===== DASHBOARD & DRILLDOWN =====
+function initSelects() {
+  const ms = getAllMonths();
+  const opts = ms.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  if(document.getElementById('rptFrom')) {
+    document.getElementById('rptFrom').innerHTML = opts; document.getElementById('rptTo').innerHTML = opts;
+    document.getElementById('rptFrom').selectedIndex = Math.max(0, ms.indexOf(currentMonthKey())-5);
+    document.getElementById('rptTo').value = currentMonthKey();
+  }
+  if(document.getElementById('expFrom')) {
+    document.getElementById('expFrom').innerHTML = opts; document.getElementById('expTo').innerHTML = opts;
+    document.getElementById('expFrom').value = '2024-01'; document.getElementById('expTo').value = currentMonthKey();
+  }
+  // FIX #6: Start month select in member modal
+  if(document.getElementById('mStartMonth')) {
+    document.getElementById('mStartMonth').innerHTML = ms.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+    document.getElementById('mStartMonth').value = currentMonthKey();
+  }
+}
+
+// ===== DASHBOARD =====
 function updateDashboard() {
-  const mk = currentMonthKey(); let dTotCol=0, dTotDue=0, gTotCol=0, gTotDue=0;
-  let mBreak='', oBreak='';
-
-  appData.groups.forEach(g => {
-    let mCol=0, mDue=0, oCol=0, oDue=0;
-    const gMems = appData.members.filter(x=>x.groupId===g.id);
-    gMems.forEach(m => {
-      const p = getPaidMonths(m.id), unp = getUnpaidMonths(m);
-      if(p.includes(mk)) mCol+=g.amount; else mDue+=g.amount;
-      oCol += p.filter(k=>k<=mk).length * g.amount;
-      oDue += unp.length * g.amount;
-    });
-    dTotCol+=mCol; dTotDue+=mDue; gTotCol+=oCol; gTotDue+=oDue;
-    
-    // Rows
-    mBreak += `<div class="dash-group-row" onclick="openDashDetail('${g.id}','month')"><div><div style="font-size:13px;font-weight:700;">${g.name}</div><div style="font-size:10px;color:var(--gray);">আদায়: ₹${mCol} | বাকি: ₹${mDue}</div></div><div class="dash-detail-btn">তালিকা দেখুন</div></div>`;
-    
-    oBreak += `<div class="dash-group-row" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:white;" onclick="openDashDetail('${g.id}','overall')"><div><div style="font-size:13px;font-weight:700;">${g.name}</div><div style="font-size:10px;color:rgba(255,255,255,0.8);">আদায়: ₹${oCol} | বাকি: ₹${oDue}</div></div><div class="dash-detail-btn" style="background:rgba(255,255,255,0.2);color:white;">তালিকা দেখুন</div></div>`;
+  let mems=0, col=0, dueM=0, dueA=0, gCol=0, gDue=0;
+  const mk = currentMonthKey();
+  appData.members.forEach(m => {
+    const g = appData.groups.find(x=>x.id===m.groupId); if(!g) return;
+    mems++;
+    const paidAll = getPaidMonths(m.id);
+    if(paidAll.includes(mk)) col += g.amount; else { dueM++; dueA += g.amount; }
+    const pastPaid = paidAll.filter(k=>k<=mk);
+    gCol += pastPaid.length * g.amount;
+    gDue += getUnpaidMonths(m).length * g.amount;
   });
-
-  document.getElementById('dashCollected').textContent='₹'+dTotCol; document.getElementById('dashDueAmt').textContent='₹'+dTotDue;
-  document.getElementById('grandCollected').textContent='₹'+gTotCol; document.getElementById('grandDue').textContent='₹'+gTotDue;
-  document.getElementById('dashMonthGroupBreakdown').innerHTML = mBreak || '<div class="empty-state">No Groups</div>';
-  document.getElementById('dashOverallGroupBreakdown').innerHTML = oBreak || '<div class="empty-state">No Groups</div>';
+  document.getElementById('dashTotalMembers').textContent = mems;
+  document.getElementById('dashCollected').textContent = '₹'+col;
+  document.getElementById('dashDueMembers').textContent = dueM;
+  document.getElementById('dashDueAmt').textContent = '₹'+dueA;
+  document.getElementById('grandCollected').textContent = '₹'+gCol;
+  document.getElementById('grandDue').textContent = '₹'+gDue;
 }
 
-function openDashDetail(gId, type) {
-  const g = appData.groups.find(x=>x.id===gId); if(!g) return;
+// FIX #3: Group breakdown for dashboard boxes
+function getMonthlyGroupBreakdown() {
+  const mk = currentMonthKey();
+  return appData.groups.map(g => {
+    let col=0, due=0, dueMembers=[];
+    appData.members.filter(m=>m.groupId===g.id).forEach(m=>{
+      if(getPaidMonths(m.id).includes(mk)) col+=g.amount;
+      else { due+=g.amount; dueMembers.push(m); }
+    });
+    return {g, col, due, dueMembers};
+  });
+}
+
+function getGrandGroupBreakdown() {
+  const mk = currentMonthKey();
+  return appData.groups.map(g => {
+    let col=0, due=0, dueMembers=[];
+    appData.members.filter(m=>m.groupId===g.id).forEach(m=>{
+      const paidAll = getPaidMonths(m.id).filter(k=>k<=mk);
+      col += paidAll.length * g.amount;
+      const unp = getUnpaidMonths(m);
+      if(unp.length>0) { due += unp.length*g.amount; dueMembers.push({m, unp}); }
+    });
+    return {g, col, due, dueMembers};
+  });
+}
+
+function toggleMonthlyBreakdown() {
+  monthlyBreakdownOpen = !monthlyBreakdownOpen;
+  const el = document.getElementById('dashMonthlyGroupBreakdown');
+  const toggle = document.getElementById('dashMonthlyToggle');
+  if(monthlyBreakdownOpen) {
+    const data = getMonthlyGroupBreakdown();
+    el.innerHTML = data.map(d=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#f9fafb;border-radius:8px;margin-bottom:4px;cursor:pointer;" onclick="showDashGroupDetail('monthly','${d.g.id}')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${d.g.color||'var(--blue)'}"></div>
+          <div style="font-size:12px;font-weight:600;">${d.g.name}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--green-dark);font-weight:700;">আদায় ₹${d.col}</div>
+          <div style="font-size:10px;color:var(--red);">বাকি ₹${d.due}</div>
+        </div>
+      </div>`).join('');
+    el.style.display='block';
+    toggle.textContent = '▲ বন্ধ করুন';
+  } else {
+    el.style.display='none';
+    toggle.textContent = '▼ Group ভিত্তিক বিস্তারিত';
+  }
+}
+
+function toggleGrandBreakdown() {
+  grandBreakdownOpen = !grandBreakdownOpen;
+  const el = document.getElementById('dashGrandGroupBreakdown');
+  const toggle = document.getElementById('dashGrandToggle');
+  if(grandBreakdownOpen) {
+    const data = getGrandGroupBreakdown();
+    el.innerHTML = data.map(d=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(255,255,255,0.1);border-radius:8px;margin-bottom:4px;cursor:pointer;" onclick="showDashGroupDetail('grand','${d.g.id}')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${d.g.color||'var(--gold-light)'}"></div>
+          <div style="font-size:12px;font-weight:600;color:white;">${d.g.name}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--gold-light);font-weight:700;">আদায় ₹${d.col}</div>
+          <div style="font-size:10px;color:#fca5a5;">বাকি ₹${d.due}</div>
+        </div>
+      </div>`).join('');
+    el.style.display='block';
+    toggle.textContent = '▲ বন্ধ করুন';
+  } else {
+    el.style.display='none';
+    toggle.textContent = '▼ Group ভিত্তিক বিস্তারিত';
+  }
+}
+
+function showDashboardDetail(type) {
+  const title = type==='monthly'?'এই মাসের বিস্তারিত':'সর্বমোট বিস্তারিত';
+  document.getElementById('dashDetailTitle').textContent = title;
+  const data = type==='monthly' ? getMonthlyGroupBreakdown() : getGrandGroupBreakdown();
   const mk = currentMonthKey();
   let html = '';
-  appData.members.filter(m=>m.groupId===gId).forEach(m=>{
-    const p = getPaidMonths(m.id), unp = getUnpaidMonths(m);
-    let st='', val='';
-    if(type==='month') {
-      const pd = p.includes(mk);
-      st = pd?`<span style="color:var(--green);font-weight:700;">✅ ₹${g.amount}</span>`:`<span style="color:var(--red);font-weight:700;">❌ ₹${g.amount} বাকি</span>`;
+  data.forEach(d => {
+    html += `<div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:12px;height:12px;border-radius:50%;background:${d.g.color||'var(--blue)'}"></div>
+        <div style="font-size:14px;font-weight:700;color:var(--green-dark);">${d.g.name}</div>
+        <div style="margin-left:auto;font-size:12px;"><span style="color:var(--green-dark);font-weight:700;">আদায় ₹${d.col}</span> • <span style="color:var(--red);">বাকি ₹${d.due}</span></div>
+      </div>`;
+    if(d.dueMembers.length===0) {
+      html += `<div style="font-size:11px;color:#065f46;background:#d1fae5;padding:6px 10px;border-radius:6px;">✅ এই group-এ কেউ বাকি নেই</div>`;
     } else {
-      val = unp.length>0 ? `<span style="color:var(--red);font-weight:700;">₹${unp.length*g.amount} বাকি</span>` : `<span style="color:var(--green);font-weight:700;">ক্লিয়ার</span>`;
-      st = val;
+      d.dueMembers.forEach(item => {
+        const mem = item.m || item;
+        const unp = item.unp || getUnpaidMonths(mem);
+        const unpArr = Array.isArray(unp) ? unp : [];
+        const unpAmt = unpArr.length * d.g.amount;
+        const paidAmt = getPaidMonths(mem.id).filter(k=>k<=mk).length * d.g.amount;
+        html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#fff8f8;border-radius:8px;margin-bottom:4px;border-left:3px solid var(--red);">
+          <div>
+            <div style="font-size:12px;font-weight:600;">${mem.name}</div>
+            <div style="font-size:10px;color:var(--gray);">জমা ₹${paidAmt} • বাকি ${unpArr.length} মাস</div>
+            ${unpArr.length>0?`<div style="font-size:10px;color:var(--red);margin-top:2px;">${unpArr.map(k=>monthLabel(k)).join(', ')}</div>`:''}
+          </div>
+          ${mem.phone?`<button onclick="sendReminderFromDash('${mem.id}');closeModal('dashDetailModal')" style="background:#25D366;color:white;border:none;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:var(--font);">📲 Reminder</button>`:''}
+        </div>`;
+      });
     }
-    
-    let wa = `https://wa.me/91${(m.phone||'').replace(/\D/g,'')}?text=Assalamu Alaikum, apnar chadar hisab...`;
-    html += `<div style="background:white;padding:12px;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-      <div><div style="font-size:13px;font-weight:600;">${m.name}</div><div style="font-size:11px;">${st}</div></div>
-      <a href="${wa}" target="_blank" style="text-decoration:none;background:#25D366;color:white;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;">💬 Message</a>
-    </div>`;
+    html += '</div><hr style="border:none;border-top:1px solid #f0f0f0;margin-bottom:14px;">';
   });
-  
-  document.getElementById('ddTitle').textContent = `${g.name} (${type==='month'?'এই মাস':'শুরু থেকে'})`;
-  document.getElementById('ddContent').innerHTML = html || '<div class="empty-state">কোনো সদস্য নেই</div>';
+  document.getElementById('dashDetailContent').innerHTML = html;
   openModal('dashDetailModal');
+}
+
+function showDashGroupDetail(type, groupId) {
+  showDashboardDetail(type);
+}
+
+function sendReminderFromDash(mId) {
+  sendReminder(mId);
 }
 
 // ===== MEMBERS =====
 function renderGroupPills() {
-  if(!activeGroupId && appData.groups.length>0) activeGroupId = appData.groups[0].id;
-  document.getElementById('groupPills').innerHTML = appData.groups.map(g=>`<button class="filter-tab ${g.id===activeGroupId?'active':''}" onclick="swGrp('${g.id}',this)">${g.name}</button>`).join('');
+  let groups = appData.groups;
+  // FIX #4: Admin sees only assigned groups in pills (but can still view all)
+  if(!activeGroupId && groups.length>0) activeGroupId = groups[0].id;
+  document.getElementById('groupPills').innerHTML = groups.map(g=>`<button class="filter-tab ${g.id===activeGroupId?'active':''}" onclick="swGrp('${g.id}',this)">${g.name}</button>`).join('');
 }
 function swGrp(id, el) { activeGroupId=id; document.querySelectorAll('#groupPills .filter-tab').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderMembers(); }
-function setMemberFilter(f,el) { memberFilter=f; document.querySelectorAll('#memberListView > .filter-tabs:last-of-type .filter-tab').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderMembers(); }
+function setMemberFilter(f, el) { memberFilter=f; document.querySelectorAll('#page-members > #memberListView > .filter-tabs:last-of-type .filter-tab').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderMembers(); }
 
 function renderMembers() {
   const list = document.getElementById('memberList');
   const g = appData.groups.find(x=>x.id===activeGroupId); if(!g) { list.innerHTML=''; return; }
-  const s = document.getElementById('memberSearch').value.toLowerCase(), mk = currentMonthKey();
-  let ms = appData.members.filter(m=>m.groupId===activeGroupId && m.name.toLowerCase().includes(s));
-  if(memberFilter==='paid') ms=ms.filter(m=>getPaidMonths(m.id).includes(mk));
-  if(memberFilter==='unpaid') ms=ms.filter(m=>!getPaidMonths(m.id).includes(mk));
+  const s = document.getElementById('memberSearch').value.toLowerCase();
+  const mk = currentMonthKey();
 
-  list.innerHTML = ms.length? ms.map(m=>`<div class="member-card" onclick="openMemberDetail('${m.id}')">
-      <div class="member-avatar" style="background:${g.color}">${m.name.charAt(0)}</div>
-      <div style="flex:1;"><div style="font-size:14px;font-weight:600;">${m.name}</div><div style="font-size:11px;color:var(--gray);">${m.phone||'-'}</div></div>
-      <span class="badge ${getPaidMonths(m.id).includes(mk)?'badge-paid':'badge-unpaid'}">${getPaidMonths(m.id).includes(mk)?'✅':'❌'}</span>
-    </div>`).join('') : '<div class="empty-state">সদস্য নেই</div>';
+  let ms = appData.members.filter(m=>m.groupId===activeGroupId && m.name.toLowerCase().includes(s));
+  if(memberFilter==='paid') ms = ms.filter(m=>getPaidMonths(m.id).includes(mk));
+  if(memberFilter==='unpaid') ms = ms.filter(m=>!getPaidMonths(m.id).includes(mk));
+
+  if(ms.length===0) { list.innerHTML='<div class="empty-state"><div class="emoji">👥</div><p>কোনো সদস্য নেই।</p></div>'; return; }
+
+  list.innerHTML = ms.map(m=>{
+    const paid = getPaidMonths(m.id).includes(mk);
+    const canEdit = adminCanEditGroup(activeGroupId);
+    return `<div class="member-card" onclick="openMemberDetail('${m.id}')">
+      <div class="member-avatar" style="background:${g.color||'var(--blue)'}">${m.name.charAt(0)}</div>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:600;">${m.name}</div><div style="font-size:11px;color:var(--gray);">${m.phone||'নম্বর নেই'}</div></div>
+      <span class="badge ${paid?'badge-paid':'badge-unpaid'}">${paid?'✅ আদায়':'❌ বাকি'}</span>
+    </div>`;
+  }).join('');
 }
 
+// ===== MEMBER DETAIL =====
 function openMemberDetail(id) {
-  const m = appData.members.find(x=>x.id===id), g = appData.groups.find(x=>x.id===m.groupId);
-  const unp=getUnpaidMonths(m), paidMs=getPaidMonths(m.id), surp=m.surplusBalance||0;
-  
-  // Set Delete button logic
-  document.getElementById('delMemberBtn').onclick = () => reqDeleteMember(id);
+  const m = appData.members.find(x=>x.id===id); if(!m) return;
+  const g = appData.groups.find(x=>x.id===m.groupId);
+  const unp = getUnpaidMonths(m);
+  const paidMs = getPaidMonths(m.id);
+  const surplus = m.surplusBalance||0;
+  const canEditThisGroup = adminCanEditGroup(m.groupId);
 
   let html = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-    <div style="width:50px;height:50px;border-radius:14px;background:${g.color};color:white;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;">${m.name.charAt(0)}</div>
-    <div><div style="font-size:18px;font-weight:700;">${m.name}</div><div style="font-size:12px;color:var(--gray);">${g.name}</div></div>
+    <div style="width:50px;height:50px;border-radius:14px;background:${g.color||'var(--blue)'};color:white;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;">${m.name.charAt(0)}</div>
+    <div style="flex:1;"><div style="font-size:18px;font-weight:700;">${m.name}</div><div style="font-size:12px;color:var(--gray);">${g.name} • ${m.phone||'নম্বর নেই'}</div></div>
   </div>`;
-  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;text-align:center;">
-    <div style="background:var(--gray-light);padding:12px;border-radius:10px;"><div style="font-size:18px;font-weight:700;color:var(--green-dark);">₹${paidMs.filter(k=>k<=currentMonthKey()).length*g.amount}</div><div style="font-size:10px;">দিয়েছেন</div></div>
-    <div style="background:var(--gray-light);padding:12px;border-radius:10px;"><div style="font-size:18px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;">বাকি</div></div>
+
+  html += `<div class="detail-stats">
+    <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--green-dark);">₹${paidMs.filter(k=>k<=currentMonthKey()).length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট দিয়েছেন</div></div>
+    <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট বাকি</div></div>
   </div>`;
-  if(surp>0) html+=`<div style="background:#fef3c7;padding:12px;border-radius:10px;text-align:center;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#92400e;">₹${surp}</div><div style="font-size:10px;">অতিরিক্ত জমা</div></div>`;
-  html += `<button class="btn-primary" onclick="openPayment('${m.id}')" style="margin-bottom:16px;">💳 Payment Update</button>`;
-  if(unp.length>0) html+=`<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ বকেয়া মাস:</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${unp.map(k=>`<span class="badge badge-unpaid">${monthLabel(k)}</span>`).join('')}</div>`;
-  
-  document.getElementById('memberListView').style.display='none'; document.getElementById('detailContent').innerHTML=html; document.getElementById('memberDetailView').style.display='block';
+
+  if(surplus>0) html+=`<div style="background:#fef3c7;border-radius:10px;padding:12px;text-align:center;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#92400e;">₹${surplus}</div><div style="font-size:10px;color:#92400e;">অতিরিক্ত জমা</div></div>`;
+
+  if(canEditThisGroup && adminCanDo('payment')) {
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button class="btn-primary" onclick="openPayment('${m.id}')">💳 Payment</button>
+      <button class="btn-primary" style="background:#fee2e2;color:var(--red);box-shadow:none;" onclick="requestDeleteMember('${m.id}')">🗑 Delete</button>
+    </div>`;
+  }
+
+  if(unp.length>0) html+=`<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ বকেয়া মাসগুলো:</div><div class="month-chips">${unp.map(k=>`<span class="badge badge-unpaid">${monthLabel(k)}</span>`).join('')}</div>`;
+
+  document.getElementById('memberListView').style.display='none';
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('memberDetailView').style.display='block';
 }
+
 function backToMembers() { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; }
 
-function openAddMemberModal() {
-  document.getElementById('mName').value=''; document.getElementById('mPhone').value='';
-  document.getElementById('mGroup').innerHTML = appData.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
-  openModal('memberModal');
-}
-function saveMember() {
-  const gId = document.getElementById('mGroup').value;
-  if(!hasPerm(gId)) { showToast('এই Group এ কাজ করার Permission নেই!'); return; }
-  const name=document.getElementById('mName').value.trim(); if(!name) return;
-  appData.members.push({ id:'m'+Date.now(), name, phone:document.getElementById('mPhone').value.trim(), groupId:gId, startMonth:document.getElementById('mStartMonth').value, surplusBalance:0 });
-  closeModal('memberModal'); activeGroupId=gId; renderGroupPills(); renderMembers(); updateDashboard(); showToast('✅ সদস্য যোগ হয়েছে!');
-}
-
-function reqDeleteMember(id) {
-  const m = appData.members.find(x=>x.id===id);
+// FIX #5: Admin requests delete, owner approves
+function requestDeleteMember(id) {
+  const m = appData.members.find(x=>x.id===id); if(!m) return;
   if(currentRole==='owner') {
-    if(confirm('Delete korben?')) { appData.members=appData.members.filter(x=>x.id!==id); backToMembers(); updateDashboard(); showToast('Deleted'); }
+    if(confirm(`"${m.name}" কে সত্যিই মুছে ফেলবেন?`)) {
+      appData.members = appData.members.filter(x=>x.id!==id);
+      appData.payments = appData.payments.filter(x=>x.memberId!==id);
+      addLog('🗑',`${m.name} মুছে ফেলা হয়েছে`);
+      backToMembers(); renderMembers(); updateDashboard();
+      showToast('🗑 সদস্য মুছে ফেলা হয়েছে');
+    }
   } else {
-    if(!hasPerm(m.groupId)) { showToast('Permission nei'); return; }
-    appData.requests.push({ reqId:'r'+Date.now(), mId:id, mName:m.name, admin:currentUser.email });
-    showToast('Owner kache Request pathano hoyeche.');
+    if(confirm(`"${m.name}" কে মুছে ফেলার জন্য Owner-এর কাছে Request পাঠাবেন?`)) {
+      if(!appData.deleteRequests) appData.deleteRequests=[];
+      const existing = appData.deleteRequests.find(r=>r.memberId===id && r.status==='pending');
+      if(existing) { showToast('ইতিমধ্যে Request পাঠানো হয়েছে'); return; }
+      appData.deleteRequests.push({
+        id:'dr'+Date.now(), memberId:id, memberName:m.name,
+        requestedBy:currentUser.name, requestedAt:new Date().toISOString(), status:'pending'
+      });
+      addLog('📩',`${currentUser.name} "${m.name}" মুছে ফেলার Request পাঠিয়েছেন`);
+      showToast('✅ Request পাঠানো হয়েছে। Owner অনুমোদন করবেন।');
+    }
   }
 }
 
-// ===== PAYMENT =====
-function openPayment(id) {
-  const m = appData.members.find(x=>x.id===id);
-  if(!hasPerm(m.groupId)) { showToast('Permission nei!'); return; }
-  payingMemberId = id; smartResult = null; const g = appData.groups.find(x=>x.id===m.groupId);
-  document.getElementById('payModalSub').textContent = `${m.name} • ${g.name} (₹${g.amount})`;
-  document.getElementById('smartAmount').value=''; document.getElementById('smartPreview').style.display='none';
-  openModal('paymentModal');
-}
-function calcPayment() {
-  const m=appData.members.find(x=>x.id===payingMemberId), g=appData.groups.find(x=>x.id===m.groupId);
-  const amt = parseInt(document.getElementById('smartAmount').value)||0;
-  if(amt<=0) { document.getElementById('smartPreview').style.display='none'; smartResult=null; return; }
-  let rem = amt + (m.surplusBalance||0); const unp = getUnpaidMonths(m).sort();
-  const pAdd=[], aAdd=[];
-  for(let k of unp) { if(rem>=g.amount) { pAdd.push(k); rem-=g.amount; } else break; }
-  for(let i=1;i<=24;i++){ if(rem<g.amount) break; let k=monthKey(CY, CM+i); if(!getPaidMonths(m.id).includes(k) && !unp.includes(k)) { aAdd.push(k); rem-=g.amount; } }
-  
-  smartResult = { paidToAdd:pAdd, advToAdd:aAdd, newSurp:rem, inputAmt:amt };
-  let h='';
-  if(pAdd.length) h+=`<div style="color:var(--green-dark);">✅ ক্লিয়ার: ${pAdd.map(k=>monthLabel(k)).join(', ')}</div>`;
-  if(aAdd.length) h+=`<div style="color:var(--blue);">🔮 অগ্রিম: ${aAdd.map(k=>monthLabel(k)).join(', ')}</div>`;
-  if(rem>0) h+=`<div style="color:#92400e;">💰 অতিরিক্ত জমা: ₹${rem}</div>`;
-  document.getElementById('smartPreview').innerHTML = h || 'পুরো টাকা জমা থাকবে';
-  document.getElementById('smartPreview').style.display='block';
-}
-function savePayment() {
-  if(!smartResult || smartResult.inputAmt<=0) return;
-  const m=appData.members.find(x=>x.id===payingMemberId), g=appData.groups.find(x=>x.id===m.groupId);
-  [...smartResult.paidToAdd, ...smartResult.advToAdd].forEach(mo => appData.payments.push({ id:'p'+Date.now()+Math.random(), memberId:m.id, month:mo, amount:g.amount }));
-  m.surplusBalance = smartResult.newSurp;
-  closeModal('paymentModal'); openMemberDetail(m.id); updateDashboard();
-  
-  // Format Exactly as requested
-  const allMs = [...smartResult.paidToAdd, ...smartResult.advToAdd].map(k=>monthLabel(k)).join(', ');
-  let msg = `🧾 পেমেন্ট রসিদ\n\nনাম: ${m.name}\nগ্রুপ: ${g.name}\nমাস: ${allMs||'N/A'}\nপরিমাণ: ₹${smartResult.inputAmt}\n`;
-  if(smartResult.newSurp>0) msg+=`অতিরিক্ত জমা: ₹${smartResult.newSurp}\n`;
-  const [dy,dm,dd]=new Date().toISOString().split('T')[0].split('-');
-  msg+=`তারিখ: ${dd}/${dm}/${dy}\n\n— HTI PayLink`;
-  
-  const phone = (m.phone||'').replace(/\D/g,'').replace(/^0+/,'');
-  window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+function openAddMemberModal() {
+  if(!adminCanDo('addMember') && currentRole!=='owner') { showToast('এই permission নেই'); return; }
+  document.getElementById('mName').value=''; document.getElementById('mPhone').value='';
+  // Filter groups for admin
+  let groups = appData.groups;
+  if(currentRole==='admin' && currentAdminData) {
+    groups = groups.filter(g=>currentAdminData.groups&&currentAdminData.groups.includes(g.id));
+  }
+  document.getElementById('mGroup').innerHTML = groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+  // FIX #6: Set start month select
+  const ms = getAllMonths();
+  document.getElementById('mStartMonth').innerHTML = ms.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  document.getElementById('mStartMonth').value = currentMonthKey();
+  openModal('memberModal');
 }
 
-// ===== EXPORT =====
-function doExport(type) {
-  closeModal('exportModal');
-  const csv = "Name,Group,Total\n" + appData.members.map(m=>`${m.name},${m.groupId},100`).join('\n'); // simplified for example
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='Data_Export.csv';
-  
-  if(type==='sheet') { showToast('CSV File copy/download hoyeche, Google Sheet e paste korun.'); a.click(); }
-  else { showToast('Excel File Downloaded!'); a.click(); }
+function saveMember() {
+  const name=document.getElementById('mName').value.trim();
+  const phone=document.getElementById('mPhone').value.trim();
+  const groupId=document.getElementById('mGroup').value;
+  const startMonth=document.getElementById('mStartMonth').value; // FIX #6
+  if(!name) { showToast('নাম দিন!'); return; }
+  appData.members.push({ id:'m'+Date.now(), name, phone, groupId, startMonth, surplusBalance:0 });
+  addLog('➕',`${name} যোগ হয়েছেন (${monthLabel(startMonth)} থেকে)`);
+  closeModal('memberModal');
+  activeGroupId = groupId;
+  renderGroupPills(); renderMembers(); updateDashboard();
+  showToast('✅ সদস্য যোগ হয়েছে!');
 }
 
 // ===== ADMIN PANEL =====
 function renderAdminPanel() {
-  // Requests
-  const rCard = document.getElementById('adminRequestsCard'), rList = document.getElementById('adminReqList');
-  if(appData.requests.length>0 && currentRole==='owner') {
-    rCard.style.display='block';
-    rList.innerHTML = appData.requests.map(r=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #fee2e2;">
-      <div style="font-size:12px;"><b>${r.mName}</b> k delete (By: ${r.admin})</div>
-      <div><button onclick="ansReq('${r.reqId}',true)" style="color:green;margin-right:8px;">✅</button><button onclick="ansReq('${r.reqId}',false)" style="color:red;">❌</button></div>
+  renderAdminGroups();
+  if(currentRole==='owner') {
+    document.getElementById('adminUsersCard').style.display='block';
+    document.getElementById('addAdminBtn').style.display='flex';
+    renderAdminUsers();
+    renderDeleteRequests();
+  } else {
+    document.getElementById('adminUsersCard').style.display='none';
+  }
+  // Only owner can add groups
+  document.getElementById('addGroupBtn').style.display = currentRole==='owner'?'flex':'none';
+}
+
+function renderAdminGroups() {
+  const c = document.getElementById('adminGroupList');
+  if(appData.groups.length===0) { c.innerHTML='<div class="empty-state">কোনো Group নেই</div>'; return; }
+  c.innerHTML = appData.groups.map(g=>`
+    <div class="admin-item">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:24px;height:24px;border-radius:6px;background:${g.color||'var(--blue)'};"></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;">${g.name}</div>
+          <div style="font-size:11px;color:var(--gray);">₹${g.amount} / মাস</div>
+        </div>
+      </div>
+      ${currentRole==='owner'?`<div style="display:flex;gap:6px;">
+        <button class="admin-action-btn btn-edit" onclick="openGroupModal('${g.id}')">✏️ Edit</button>
+        <button class="admin-action-btn btn-delete" onclick="deleteGroup('${g.id}')">🗑</button>
+      </div>`:'<span style="font-size:10px;color:var(--gray);">View only</span>'}
     </div>`).join('');
-  } else rCard.style.display='none';
-
-  // Groups
-  document.getElementById('adminGroupList').innerHTML = appData.groups.map(g=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;">
-    <div><b>${g.name}</b> (₹${g.amount})</div>
-    <div><button onclick="editGroup('${g.id}')" style="margin-right:10px;">✏️</button><button onclick="delGroup('${g.id}')" style="color:red;">🗑</button></div>
-  </div>`).join('');
-  
-  // Admins
-  document.getElementById('adminUserList').innerHTML = appData.admins.map(a=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;">
-    <div><b>${a.name}</b><br><span style="font-size:10px;color:gray;">${a.email} | Perms: ${a.permissions.length} groups</span></div>
-    <div><button onclick="editAdmin('${a.email}')" style="margin-right:10px;">✏️</button><button onclick="suspendAdmin('${a.email}')">${a.suspended?'Unsuspend':'Suspend'}</button></div>
-  </div>`).join('');
 }
 
-function ansReq(reqId, ok) {
-  const r = appData.requests.find(x=>x.reqId===reqId);
-  if(ok) appData.members = appData.members.filter(x=>x.id!==r.mId);
-  appData.requests = appData.requests.filter(x=>x.reqId!==reqId);
-  renderAdminPanel(); updateDashboard();
+// FIX #2: Group edit modal
+function openGroupModal(editId) {
+  document.getElementById('groupModalTitle').textContent = editId?'Group Edit করুন':'নতুন Group';
+  document.getElementById('editingGroupId').value = editId||'';
+  if(editId) {
+    const g = appData.groups.find(x=>x.id===editId);
+    document.getElementById('groupName').value = g.name;
+    document.getElementById('groupAmount').value = g.amount;
+    selectedGroupColor = g.color||'#2563eb';
+    document.getElementById('groupColor').value = selectedGroupColor;
+    document.querySelectorAll('.color-opt').forEach(el=>{ el.style.border=el.dataset.color===selectedGroupColor?'3px solid #1a1a1a':'3px solid transparent'; });
+  } else {
+    document.getElementById('groupName').value=''; document.getElementById('groupAmount').value='';
+    selectedGroupColor='#2563eb'; document.getElementById('groupColor').value='#2563eb';
+    document.querySelectorAll('.color-opt').forEach(el=>el.style.border='3px solid transparent');
+  }
+  openModal('groupModal');
 }
 
-function promptAddGroup() {
-  const n=prompt("Group Name:"), a=prompt("Amount:");
-  if(n&&a) { appData.groups.push({id:'g'+Date.now(), name:n, amount:parseInt(a), color:'#2563eb'}); renderAdminPanel(); }
+function saveGroup() {
+  const name=document.getElementById('groupName').value.trim();
+  const amount=parseInt(document.getElementById('groupAmount').value);
+  const color=document.getElementById('groupColor').value;
+  const editId=document.getElementById('editingGroupId').value;
+  if(!name||!amount||isNaN(amount)) { showToast('নাম ও পরিমাণ দিন!'); return; }
+  if(editId) {
+    const g = appData.groups.find(x=>x.id===editId);
+    g.name=name; g.amount=amount; g.color=color;
+    addLog('✏️',`Group "${name}" আপডেট হয়েছে`);
+    showToast('✅ Group আপডেট হয়েছে!');
+  } else {
+    const newGroup = { id:'g'+Date.now(), name, amount, color };
+    appData.groups.push(newGroup);
+    if(!activeGroupId) activeGroupId = newGroup.id;
+    addLog('➕',`নতুন Group "${name}" যোগ হয়েছে`);
+    showToast('✅ Group যোগ হয়েছে!');
+  }
+  closeModal('groupModal'); renderAdminPanel(); renderGroupPills(); updateDashboard();
 }
-function editGroup(id) {
-  const g=appData.groups.find(x=>x.id===id);
-  const n=prompt("New Name:", g.name), a=prompt("New Amount:", g.amount);
-  if(n&&a) { g.name=n; g.amount=parseInt(a); renderAdminPanel(); updateDashboard(); }
-}
-function delGroup(id) { if(confirm('Delete Group?')) { appData.groups=appData.groups.filter(x=>x.id!==id); renderAdminPanel(); } }
 
-function openAdminModal() {
-  editingAdmin = null; document.getElementById('aName').value=''; document.getElementById('aEmail').value='';
-  document.getElementById('aEmail').disabled=false;
-  document.getElementById('aPerms').innerHTML = appData.groups.map(g=>`<label><input type="checkbox" value="${g.id}"> ${g.name}</label>`).join('');
-  openModal('addAdminModal');
+function deleteGroup(id) {
+  const g = appData.groups.find(x=>x.id===id);
+  if(confirm(`"${g.name}" Group ডিলিট করতে চান? এর সব সদস্যও মুছে যাবে!`)) {
+    appData.groups = appData.groups.filter(x=>x.id!==id);
+    appData.members = appData.members.filter(x=>x.groupId!==id);
+    if(activeGroupId===id) activeGroupId = appData.groups.length>0?appData.groups[0].id:null;
+    addLog('🗑',`Group "${g.name}" মুছে ফেলা হয়েছে`);
+    renderAdminPanel(); renderGroupPills(); renderMembers(); updateDashboard();
+    showToast('🗑 Group ডিলিট হয়েছে!');
+  }
 }
-function editAdmin(email) {
-  const a = appData.admins.find(x=>x.email===email); editingAdmin = email;
-  document.getElementById('aName').value=a.name; document.getElementById('aEmail').value=a.email; document.getElementById('aEmail').disabled=true;
-  document.getElementById('aPerms').innerHTML = appData.groups.map(g=>`<label><input type="checkbox" value="${g.id}" ${a.permissions.includes(g.id)?'checked':''}> ${g.name}</label>`).join('');
-  openModal('addAdminModal');
+
+// FIX #2: Admin list with edit/suspend/delete
+function renderAdminUsers() {
+  const c = document.getElementById('adminUserList');
+  if(appData.admins.length===0) { c.innerHTML='<div class="empty-state">কোনো Admin নেই</div>'; return; }
+  c.innerHTML = appData.admins.map(a=>`
+    <div class="admin-item" style="${a.suspended?'opacity:0.6':''}">
+      <div>
+        <div style="font-size:13px;font-weight:600;">${a.name} ${a.suspended?'<span style="color:var(--red);font-size:10px;">(Suspended)</span>':''}</div>
+        <div style="font-size:11px;color:var(--gray);">${a.email}</div>
+        <div style="margin-top:4px;">${(a.groups||[]).map(gId=>{ const g=appData.groups.find(x=>x.id===gId); return g?`<span class="permission-chip">${g.name}</span>`:''; }).join('')}</div>
+        <div style="margin-top:2px;font-size:10px;color:var(--gray);">
+          ${a.permissions?Object.entries(a.permissions).filter(([k,v])=>v).map(([k])=>permLabel(k)).join(' • '):''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <button class="admin-action-btn btn-edit" onclick="openEditAdminModal('${a.email}')">✏️ Edit</button>
+        <button class="admin-action-btn btn-suspend" onclick="toggleSuspend('${a.email}')">${a.suspended?'▶ Activate':'⏸ Suspend'}</button>
+        <button class="admin-action-btn btn-delete" onclick="deleteAdmin('${a.email}')">🗑 Remove</button>
+      </div>
+    </div>`).join('');
 }
+
+function permLabel(k) {
+  const map={addMember:'সদস্য যোগ',payment:'Payment',reminder:'Reminder',report:'Report'};
+  return map[k]||k;
+}
+
+function toggleSuspend(email) {
+  const a=appData.admins.find(x=>x.email===email); if(!a) return;
+  a.suspended=!a.suspended;
+  addLog(a.suspended?'⏸':'▶',`${a.name} ${a.suspended?'suspend':'activate'} করা হয়েছে`);
+  renderAdminUsers(); showToast(a.suspended?'⏸ Admin suspend হয়েছে':'▶ Admin active হয়েছে');
+}
+
+// FIX #2: Admin add with group assignment and permissions
+function openAddAdminModal() {
+  document.getElementById('adminModalTitle').textContent='নতুন Admin যোগ করুন';
+  document.getElementById('editingAdminEmail').value='';
+  document.getElementById('adminName').value='';
+  document.getElementById('adminEmail').value='';
+  document.getElementById('adminEmail').disabled=false;
+  // Group checkboxes
+  document.getElementById('adminGroupCheckboxes').innerHTML = appData.groups.map(g=>`
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+      <input type="checkbox" name="adminGroup" value="${g.id}"> ${g.name}
+    </label>`).join('');
+  // Reset permissions
+  ['perm_addMember','perm_payment','perm_reminder','perm_report'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.checked=id!=='perm_report';
+  });
+  openModal('adminModal');
+}
+
+function openEditAdminModal(email) {
+  const a=appData.admins.find(x=>x.email===email); if(!a) return;
+  document.getElementById('adminModalTitle').textContent='Admin Edit করুন';
+  document.getElementById('editingAdminEmail').value=email;
+  document.getElementById('adminName').value=a.name;
+  document.getElementById('adminEmail').value=a.email;
+  document.getElementById('adminEmail').disabled=true;
+  // Group checkboxes
+  document.getElementById('adminGroupCheckboxes').innerHTML = appData.groups.map(g=>`
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+      <input type="checkbox" name="adminGroup" value="${g.id}" ${(a.groups||[]).includes(g.id)?'checked':''}> ${g.name}
+    </label>`).join('');
+  // Permissions
+  const perms=a.permissions||{};
+  if(document.getElementById('perm_addMember')) document.getElementById('perm_addMember').checked=perms.addMember!==false;
+  if(document.getElementById('perm_payment')) document.getElementById('perm_payment').checked=perms.payment!==false;
+  if(document.getElementById('perm_reminder')) document.getElementById('perm_reminder').checked=perms.reminder!==false;
+  if(document.getElementById('perm_report')) document.getElementById('perm_report').checked=!!perms.report;
+  openModal('adminModal');
+}
+
 function saveAdmin() {
-  const em=document.getElementById('aEmail').value, nm=document.getElementById('aName').value;
-  const pms=Array.from(document.querySelectorAll('#aPerms input:checked')).map(x=>x.value);
-  if(editingAdmin) { const a=appData.admins.find(x=>x.email===editingAdmin); a.name=nm; a.permissions=pms; }
-  else appData.admins.push({email:em, name:nm, permissions:pms, suspended:false});
-  closeModal('addAdminModal'); renderAdminPanel();
+  const name=document.getElementById('adminName').value.trim();
+  const email=document.getElementById('adminEmail').value.trim();
+  const editEmail=document.getElementById('editingAdminEmail').value;
+  if(!name||!email) { showToast('নাম ও Gmail দিন!'); return; }
+  const selectedGroups = [...document.querySelectorAll('input[name="adminGroup"]:checked')].map(x=>x.value);
+  if(selectedGroups.length===0) { showToast('অন্তত একটি Group নির্বাচন করুন!'); return; }
+  const permissions = {
+    addMember: document.getElementById('perm_addMember').checked,
+    payment: document.getElementById('perm_payment').checked,
+    reminder: document.getElementById('perm_reminder').checked,
+    report: document.getElementById('perm_report').checked,
+  };
+  if(editEmail) {
+    const a=appData.admins.find(x=>x.email===editEmail);
+    a.name=name; a.groups=selectedGroups; a.permissions=permissions;
+    addLog('✏️',`Admin "${name}" আপডেট হয়েছে`);
+    showToast('✅ Admin আপডেট হয়েছে!');
+  } else {
+    if(appData.admins.find(x=>x.email===email)) { showToast('এই Gmail ইতিমধ্যে আছে!'); return; }
+    appData.admins.push({ email, name, suspended:false, groups:selectedGroups, permissions });
+    addLog('➕',`নতুন Admin "${name}" যোগ হয়েছে`);
+    showToast('✅ Admin যোগ হয়েছে!');
+  }
+  closeModal('adminModal'); renderAdminPanel();
 }
-function suspendAdmin(email) { const a=appData.admins.find(x=>x.email===email); a.suspended=!a.suspended; renderAdminPanel(); }
 
-// WhatsApp Preview Update (Simple stub)
-function updateWAPreview() {}
+function deleteAdmin(email) {
+  const a=appData.admins.find(x=>x.email===email);
+  if(confirm(`"${a.name}" কে Admin থেকে রিমুভ করবেন?`)) {
+    appData.admins = appData.admins.filter(x=>x.email!==email);
+    addLog('🗑',`Admin "${a.name}" রিমুভ হয়েছে`);
+    renderAdminUsers(); showToast('🗑 Admin রিমুভ হয়েছে!');
+  }
+}
+
+// FIX #5: Delete requests shown to owner
+function renderDeleteRequests() {
+  const card = document.getElementById('deleteRequestsCard');
+  const list = document.getElementById('deleteRequestList');
+  const pending = (appData.deleteRequests||[]).filter(r=>r.status==='pending');
+  if(pending.length===0) { card.style.display='none'; return; }
+  card.style.display='block';
+  list.innerHTML = pending.map(r=>`
+    <div class="delete-request-badge">
+      <div>
+        <div style="font-size:13px;font-weight:600;">🗑 ${r.memberName}</div>
+        <div style="font-size:10px;color:var(--gray);">${r.requestedBy} • ${new Date(r.requestedAt).toLocaleDateString('bn-BD')}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="admin-action-btn" style="background:#d1fae5;color:#065f46;" onclick="approveDeleteRequest('${r.id}')">✅ অনুমোদন</button>
+        <button class="admin-action-btn btn-delete" onclick="rejectDeleteRequest('${r.id}')">✕ বাতিল</button>
+      </div>
+    </div>`).join('');
+}
+
+function approveDeleteRequest(reqId) {
+  const req=appData.deleteRequests.find(x=>x.id===reqId); if(!req) return;
+  appData.members = appData.members.filter(x=>x.id!==req.memberId);
+  appData.payments = appData.payments.filter(x=>x.memberId!==req.memberId);
+  req.status='approved';
+  addLog('✅',`"${req.memberName}" মুছে ফেলার Request অনুমোদিত হয়েছে`);
+  renderAdminPanel(); renderMembers(); updateDashboard(); showToast('✅ সদস্য মুছে ফেলা হয়েছে');
+}
+
+function rejectDeleteRequest(reqId) {
+  const req=appData.deleteRequests.find(x=>x.id===reqId); if(!req) return;
+  req.status='rejected';
+  addLog('✕',`"${req.memberName}" মুছে ফেলার Request বাতিল হয়েছে`);
+  renderAdminPanel(); showToast('Request বাতিল করা হয়েছে');
+}
+
+// ===== SMART PAYMENT =====
+function openPayment(id) {
+  if(!adminCanDo('payment') && currentRole!=='owner') { showToast('Payment permission নেই'); return; }
+  payingMemberId = id; smartResult = null;
+  const m = appData.members.find(x=>x.id===id); const g = appData.groups.find(x=>x.id===m.groupId);
+  document.getElementById('payModalSub').textContent = `${m.name} • ${g.name} (₹${g.amount}/মাস)`;
+  document.getElementById('smartAmount').value=''; document.getElementById('smartPreview').style.display='none';
+  openModal('paymentModal');
+}
+
+function calcPayment() {
+  const m = appData.members.find(x=>x.id===payingMemberId); const g = appData.groups.find(x=>x.id===m.groupId);
+  const amt = parseInt(document.getElementById('smartAmount').value)||0;
+  if(amt<=0) { document.getElementById('smartPreview').style.display='none'; smartResult=null; return; }
+
+  let rem = amt + (m.surplusBalance||0);
+  const unp = getUnpaidMonths(m).sort();
+  const pAdd=[], aAdd=[];
+
+  for(let k of unp) { if(rem>=g.amount) { pAdd.push(k); rem-=g.amount; } else break; }
+  for(let i=1;i<=24;i++){
+    if(rem<g.amount) break;
+    let k = monthKey(CY, CM+i);
+    if(!getPaidMonths(m.id).includes(k) && !unp.includes(k)) { aAdd.push(k); rem-=g.amount; }
+  }
+
+  smartResult = { paidToAdd:pAdd, advToAdd:aAdd, newSurp:rem, inputAmt:amt };
+  let h='';
+  // FIX #7: Show exact month names
+  if(pAdd.length>0) h+=`<div style="color:var(--green-dark);font-weight:600;">✅ বকেয়া পরিশোধ:</div><div style="color:var(--green-dark);margin-bottom:6px;">${pAdd.map(k=>monthLabel(k)).join(', ')}</div>`;
+  if(aAdd.length>0) h+=`<div style="color:var(--blue);font-weight:600;">🔮 অগ্রিম জমা:</div><div style="color:var(--blue);margin-bottom:6px;">${aAdd.map(k=>monthLabel(k)).join(', ')}</div>`;
+  if(rem>0) h+=`<div style="color:#92400e;">💰 অতিরিক্ত জমা থাকবে: ₹${rem}</div>`;
+  document.getElementById('smartPreview').innerHTML = h || `<div style="color:#92400e;">পুরো টাকা জমা থাকবে</div>`;
+  document.getElementById('smartPreview').style.display='block';
+}
+
+function savePayment() {
+  if(!smartResult || smartResult.inputAmt<=0) { showToast('টাকার পরিমাণ লিখুন!'); return; }
+  const m = appData.members.find(x=>x.id===payingMemberId); const g = appData.groups.find(x=>x.id===m.groupId);
+
+  [...smartResult.paidToAdd, ...smartResult.advToAdd].forEach(mo => {
+    appData.payments.push({ id:'p'+Date.now()+Math.random(), memberId:m.id, month:mo, amount:g.amount, date:new Date().toISOString() });
+  });
+  m.surplusBalance = smartResult.newSurp;
+
+  const allMonthNames = [...smartResult.paidToAdd, ...smartResult.advToAdd].map(k=>monthLabel(k)).join(', ');
+  addLog('💳',`${m.name}-এর ₹${smartResult.inputAmt} পেমেন্ট (${allMonthNames||'শুধু জমা'})`);
+  closeModal('paymentModal');
+  openMemberDetail(m.id); updateDashboard();
+  showToast('✅ Payment Save হয়েছে!');
+
+  // FIX #8: Auto-send receipt via WhatsApp immediately
+  sendReceipt(m, g, smartResult.paidToAdd, smartResult.advToAdd, smartResult.inputAmt, smartResult.newSurp);
+}
+
+// FIX #8: WhatsApp receipt format updated
+function sendReceipt(m, g, paidMs, advMs, inputAmt, surplus) {
+  if(!m.phone) return;
+  const allMs = [...paidMs, ...advMs].map(k => monthLabel(k));
+  const today = new Date();
+  const dateStr = String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+
+  let msg = `🧾 পেমেন্ট রসিদ\n\n`;
+  msg += `নাম: ${m.name}\n`;
+  msg += `গ্রুপ: ${g.name}\n`;
+  msg += `মাস: ${allMs.length>0?allMs.join(', '):'(শুধু জমা)'}\n`;
+  msg += `পরিমাণ: ₹${inputAmt}\n`;
+  if(surplus > 0) msg += `অতিরিক্ত জমা: ₹${surplus}\n`;
+  msg += `তারিখ: ${dateStr}\n\n`;
+  msg += `— HTI PayLink`;
+
+  const phone = m.phone.replace(/\D/g,'').replace(/^0+/,'');
+  const waPhone = phone.startsWith('91') ? phone : '91'+phone;
+  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ===== WHATSAPP REMINDER =====
+function renderWA() {
+  document.getElementById('waGroup').innerHTML = '<option value="all">সবাইকে (সব Group)</option>' + appData.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+  updateWAPreview();
+}
+function updateWAPreview() {
+  const wg = document.getElementById('waGroup').value, wf = document.getElementById('waFilter').value;
+  let ms = appData.members;
+  if(wg!=='all') ms = ms.filter(m=>m.groupId===wg);
+  if(wf==='due') ms = ms.filter(m=>getUnpaidMonths(m).length>0);
+
+  const btnC = document.getElementById('waButtons');
+  if(ms.length===0) { document.getElementById('waPreview').textContent='কোনো সদস্য নেই।'; btnC.innerHTML=''; return; }
+
+  const fM = ms[0]; const fG = appData.groups.find(g=>g.id===fM.groupId);
+  const fUnp = getUnpaidMonths(fM);
+  let pTxt = `আস্সালামু আলাইকুম ওয়া রাহমাতুল্লাহ,\n\nআশা করি আল্লাহর রহমতে ভালো আছেন।\nআপনার চাঁদার বর্তমান অবস্থা:\n`;
+  if(fUnp.length>0) pTxt += `⚠️ বাকি মাস: ${fUnp.map(k=>monthLabel(k)).join(', ')}\n💰 মোট বাকি: ₹${fUnp.length*(fG?fG.amount:0)}\nঅনুগ্রহ করে পরিশোধ করুন।\n\n`;
+  else pTxt += `✅ কোনো বাকি নেই! আলহামদুলিল্লাহ।\n\n`;
+  pTxt += `জাযাকাল্লাহু খায়রান 🌙\n— HTI PayLink`;
+  document.getElementById('waPreview').textContent = pTxt;
+
+  btnC.innerHTML = ms.map(m=>{
+    if(!m.phone) return `<div style="background:white;padding:12px;border-radius:11px;margin-bottom:8px;border:1px solid #e5e7eb;font-size:12px;"><div style="font-weight:600;">${m.name}</div><div style="color:var(--gray);font-size:10px;">📵 WhatsApp নম্বর নেই</div></div>`;
+    const unp = getUnpaidMonths(m).length;
+    const mId = m.id;
+    return `<button class="wa-btn" onclick="sendReminder('${mId}')">
+      <div style="display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-weight:700;">${m.name.charAt(0)}</div><div style="text-align:left;"><div style="font-size:13px;">${m.name}</div><div style="font-size:10px;">${unp>0?`⚠️ ${unp} মাস বাকি`:'✅ সব দেওয়া আছে'}</div></div></div>
+      <span style="font-size:18px;">📲</span>
+    </button>`;
+  }).join('');
+}
+function sendReminder(mId) {
+  const m=appData.members.find(x=>x.id===mId); if(!m) return;
+  const g=appData.groups.find(x=>x.id===m.groupId);
+  const unp = getUnpaidMonths(m);
+  let msg = `আস্সালামু আলাইকুম ওয়া রাহমাতুল্লাহ,\n\nআশা করি আল্লাহর রহমতে ভালো আছেন।\nআপনার চাঁদার বর্তমান অবস্থা:\n`;
+  if(unp.length>0) msg += `⚠️ বাকি মাস: ${unp.map(k=>monthLabel(k)).join(', ')}\n💰 মোট বাকি: ₹${unp.length*(g?g.amount:0)}\nঅনুগ্রহ করে পরিশোধ করুন।\n\n`;
+  else msg += `✅ কোনো বাকি নেই! আলহামদুলিল্লাহ।\n\n`;
+  msg += `জাযাকাল্লাহু খায়রান 🌙\n— HTI PayLink`;
+  const p = m.phone.replace(/\D/g,'').replace(/^0+/,'');
+  window.open(`https://wa.me/${p.startsWith('91')?p:'91'+p}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ===== REPORT =====
+function renderReport() {
+  let rCol=0, rDue=0;
+  const mk = currentMonthKey();
+  let allDue = [], regular = [];
+
+  appData.members.forEach(m=>{
+    const g = appData.groups.find(x=>x.id===m.groupId); if(!g) return;
+    const pastPaid = getPaidMonths(m.id).filter(k=>k<=mk);
+    rCol += pastPaid.length * g.amount;
+    const unp = getUnpaidMonths(m);
+    if(unp.length>0) { rDue+=unp.length*g.amount; allDue.push({m, g, unp:unp.length}); }
+    else if(pastPaid.length>0) regular.push({m,g,mths:pastPaid.length});
+  });
+
+  document.getElementById('rptCol').textContent = '₹'+rCol; document.getElementById('rptDue').textContent = '₹'+rDue;
+
+  allDue.sort((a,b)=> (b.unp*b.g.amount) - (a.unp*a.g.amount));
+  document.getElementById('rptDueList').innerHTML = allDue.length===0?'<div class="empty-state">কেউ বকেয়া নেই! আলহামদুলিল্লাহ ✅</div>' : allDue.map((x,i)=>{
+    const mc = i===0?'#dc2626':i===1?'#f59e0b':i===2?'#6b7280':'#e5e7eb';
+    const mcText = i<=2?'white':'#6b7280';
+    return `<div class="due-item"><div class="due-rank" style="background:${mc};color:${mcText};">${i+1}</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${x.m.name}</div><div style="font-size:11px;color:var(--gray);">${x.g.name} • ${x.unp} মাস বকেয়া</div></div><div style="font-size:13px;font-weight:700;color:var(--red);">₹${x.unp*x.g.amount}</div></div>`;
+  }).join('');
+
+  document.getElementById('rptRegularList').innerHTML = regular.length===0?'<div class="empty-state">এখনো কোনো নিয়মিত সদস্য নেই।</div>' : regular.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5;"><span style="font-size:18px;">🏆</span><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${x.m.name}</div><div style="font-size:11px;color:var(--gray);">${x.g.name} • ${x.mths} মাস নিয়মিত</div></div><span class="badge badge-paid">✓ নিয়মিত</span></div>`).join('');
+
+  renderMonthlyChart();
+}
+
+function renderMonthlyChart() {
+  const f=document.getElementById('rptFrom').value, t=document.getElementById('rptTo').value;
+  if(!f||!t) return;
+  const [fy,fm]=f.split('-').map(Number); const [ty,tm]=t.split('-').map(Number);
+  const ms=[]; let y=fy, m=fm; while(y<ty||(y===ty&&m<=tm)){ ms.push(monthKey(y,m-1)); m++; if(m>12){m=1;y++;} }
+
+  const data = ms.map(k=>{
+    let c=0; appData.payments.filter(p=>p.month===k).forEach(p=>{ c+=p.amount; });
+    return {l:MONTHS_BN[parseInt(k.split('-')[1])-1].substring(0,3)+' '+k.split('-')[0], c};
+  });
+  const mx = Math.max(...data.map(d=>d.c), 1);
+  document.getElementById('rptMonthlyChart').innerHTML = data.map(d=>`<div class="bar-row"><div class="bar-label">${d.l}</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(d.c/mx*100)}%"></div></div><div style="font-size:11px;font-weight:700;color:var(--green-dark);width:50px;text-align:right;">₹${d.c}</div></div>`).join('');
+}
+
+// FIX #1: Export — Excel downloads CSV, Google Sheet opens Google Sheets import page
+function openExportModal() { openModal('exportModal'); }
+function doExport(type) {
+  closeModal('exportModal');
+  const f=document.getElementById('expFrom').value, t=document.getElementById('expTo').value;
+  const ms = getAllMonths().filter(m=>m>=f&&m<=t);
+  let csv = 'Name,Group,' + ms.map(m=>monthLabel(m)).join(',') + ',Total\n';
+
+  appData.members.forEach(m=>{
+    const g=appData.groups.find(x=>x.id===m.groupId);
+    const paidMs = getPaidMonths(m.id);
+    let r = `"${m.name}","${g?g.name:''}"`;
+    let tot=0;
+    ms.forEach(mo=>{ if(m.startMonth<=mo){ const pd=paidMs.includes(mo); r+=`,${pd?'Paid':'Due'}`; if(pd)tot+=(g?g.amount:0); } else r+=`,-`; });
+    csv += r + `,${tot}\n`;
+  });
+
+  if(type==='excel') {
+    // Pure Excel CSV download
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='HTI_Data_Export.csv'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ Excel (CSV) ডাউনলোড হয়েছে!');
+  } else {
+    // Google Sheet: first download CSV, then open Sheets
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='HTI_Data_Export.csv'; a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(()=>{
+      window.open('https://docs.google.com/spreadsheets/create','_blank');
+      showToast('CSV ডাউনলোড হয়েছে। Sheets-এ Import করুন।');
+    }, 800);
+  }
+}
+
+// ===== LOG =====
+function addLog(ic, ac) {
+  appData.activityLog.unshift({icon:ic, action:ac, by:currentUser.name||'Admin', time:new Date().toLocaleString('bn-BD')});
+}
+function renderLog() {
+  const el = document.getElementById('logList');
+  if(appData.activityLog.length===0) { el.innerHTML='<div class="empty-state"><div class="emoji">📋</div><p>কোনো activity নেই।</p></div>'; return; }
+  el.innerHTML = appData.activityLog.map(l=>`<div class="log-item"><div class="log-icon">${l.icon}</div><div style="flex:1;"><div class="log-action">${l.action}</div><div style="font-size:10px;color:var(--gray);margin-top:2px;">${l.by} • ${l.time}</div></div></div>`).join('');
+}
+function clearLog() {
+  if(currentRole!=='owner') return;
+  if(confirm('সব Log মুছবেন?')) { appData.activityLog=[]; renderLog(); showToast('🗑 Log মুছে গেছে।'); }
+}
 </script>
 </body>
 </html>
