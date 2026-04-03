@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTI PayLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --green: #00b894;
+  --blue: #3b82f6;
+  --white: #ffffff;
+  --bg: #f9fafb;
+  --text: #111827;
+  --sub: #6b7280;
+  --border: #e5e7eb;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ===== HEADER ===== */
+.header {
+  padding: 14px 16px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* ===== TABS ===== */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--sub);
+}
+
+.tab.active {
+  color: var(--green);
+  border-bottom: 2px solid var(--green);
+}
+
+/* ===== CONTENT ===== */
+.container {
+  padding: 16px;
+}
+
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+/* ===== BUTTON ===== */
+.btn {
+  background: var(--green);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ===== MEMBER LIST ===== */
+.member {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ===== SMALL TEXT ===== */
+.small {
+  font-size: 12px;
+  color: var(--sub);
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">HTI PayLink</div>
+  <div onclick="logout()">🚪</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard', this)">Dashboard</div>
+  <div class="tab" onclick="switchTab('members', this)">Members</div>
+  <div class="tab" onclick="switchTab('reminder', this)">Reminder</div>
+  <div class="tab" onclick="switchTab('report', this)">Report</div>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="section active">
+    <div class="card">
+      <h3>মোট সদস্য</h3>
+      <h2 id="totalMembers">0</h2>
+    </div>
+
+    <div class="card">
+      <h3>মোট আদায়</h3>
+      <h2 id="totalPaid">₹0</h2>
+    </div>
+
+    <div class="card">
+      <h3>মোট বাকি</h3>
+      <h2 id="totalDue">₹0</h2>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div id="members" class="section">
+    <div class="card">
+      <button class="btn" onclick="addMember()">+ সদস্য যোগ করুন</button>
+    </div>
+
+    <div id="memberList"></div>
+  </div>
+
+  <!-- REMINDER -->
+  <div id="reminder" class="section">
+    <div class="card">
+      <h3>WhatsApp Reminder</h3>
+      <button class="btn">Send Reminder</button>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div id="report" class="section">
+    <div class="card">
+      <h3>Report</h3>
+      <button class="btn" onclick="exportData()">Export</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+/* ===== TAB SWITCH ===== */
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ===== PLACEHOLDERS ===== */
+function logout() {
+  alert("Logout system later connect হবে");
+}
+
+function addMember() {
+  alert("Add member modal later");
+}
+
+function exportData() {
+  const choice = prompt("Export কোথায়?\n1 = Excel\n2 = Google Sheet");
+
+  if (choice == "1") {
+    alert("Excel export");
+  } else {
+    alert("Google Sheet export");
+  }
+}
+
+</script>
+
+</body>
+</html>
