@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HTI PayLink</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1a6b3a;
+    --green-dark: #0f4424;
+    --green-light: #2d9a57;
+    --gold: #c8942a;
+    --gold-light: #f0b942;
+    --cream: #fdf8f0;
+    --white: #ffffff;
+    --red: #c0392b;
+    --gray: #6b7280;
+    --gray-light: #f3f4f6;
+    /* Balanced Blue */
+    --blue: #2563eb; 
+    --blue-light: #eff6ff;
+    --blue-dark: #1d4ed8;
+    
+    --shadow: 0 4px 20px rgba(0,0,0,0.12);
+    --radius: 14px;
+    --font: 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: var(--font); background: var(--cream); min-height: 100vh; color: #1a1a1a; overflow-x: hidden; }
+
+  /* ===== SPLASH ===== */
+  #splash-screen { position: fixed; inset: 0; background: linear-gradient(160deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s ease; }
+  #splash-screen.fade-out { opacity: 0; pointer-events: none; }
+  .splash-icon { font-size: 64px; margin-bottom: 16px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+  .splash-title { font-family: 'Amiri', serif; font-size: 28px; color: var(--gold-light); letter-spacing: 2px; }
+
+  /* ===== LOGIN ===== */
+  #login-screen { position: fixed; inset: 0; background: linear-gradient(160deg, var(--green-dark) 0%, var(--green) 100%); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9998; padding: 24px; }
+  #login-screen.active { display: flex; }
+  .login-box { background: white; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .login-tabs { display: flex; background: var(--gray-light); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+  .login-tab { flex: 1; padding: 8px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gray); transition: all 0.2s; }
+  .login-tab.active { background: white; color: var(--green-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--green-dark); margin-bottom: 5px; }
+  .form-input, .form-select { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-family: var(--font); outline: none; transition: border-color 0.2s; background: white; }
+  .form-input:focus, .form-select:focus { border-color: var(--blue); }
+  .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%); color: white; border: none; border-radius: 11px; font-size: 15px; font-weight: 700; font-family: var(--font); cursor: pointer; box-shadow: 0 4px 14px rgba(26,107,58,0.35); }
+  .btn-blue { background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%); box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+  .btn-google { background: white; color: var(--gray); border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  
+  /* ===== HEADER & TABS ===== */
+  #main-app { display: none; }
+  #main-app.active { display: block; }
+  .header { background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%); color: white; padding: 10px 16px; position: sticky; top: 0; z-index: 100; }
+  .header-user-badge { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: white; }
+  .tabs { display: flex; background: var(--green-dark); overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1; min-width: 70px; padding: 12px 8px; border: none; background: transparent; color: rgba(255,255,255,0.6); font-size: 12px; font-weight:600; font-family: var(--font); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: color 0.2s; }
+  .tab.active { color: var(--gold-light); border-bottom-color: var(--gold-light); background: rgba(255,255,255,0.06); }
+  .tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+  
+  .content { padding: 14px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  
+  /* ===== CARDS & DASHBOARD ===== */
+  .card { background: white; border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--green-dark); margin-bottom: 12px; }
+  .sum-card { background: white; border-radius: var(--radius); padding: 14px 12px; box-shadow: var(--shadow); text-align: center; border-top: 4px solid var(--green); }
+  .sum-card.gold { border-top-color: var(--gold); }
+  .sum-card.red { border-top-color: var(--red); }
+  .sum-card.blue { border-top-color: var(--blue); }
+  .sum-card .num { font-size: 24px; font-weight: 700; color: var(--green-dark); line-height: 1.2; }
+  .sum-card.gold .num { color: var(--gold); }
+  .sum-card.red .num { color: var(--red); }
+  .sum-card.blue .num { color: var(--blue); }
+  
+  /* ===== MEMBERS ===== */
+  .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .search-bar input { flex: 1; border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-family: var(--font); outline: none; }
+  .search-bar input:focus { border-color: var(--blue); }
+  .btn-add { background: var(--blue); color: white; border: none; border-radius: 10px; padding: 0 16px; font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37,99,235,0.2); }
+  .filter-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid #e5e7eb; color: var(--gray); background: white; transition: all 0.2s; }
+  .filter-tab.active { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+  .member-card { background: white; border: 1px solid #e5e7eb; border-radius: var(--radius); padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .member-avatar { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: white; flex-shrink: 0; }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+  .badge-paid { background: #d1fae5; color: #065f46; }
+  .badge-unpaid { background: #fee2e2; color: #991b1b; }
+  
+  /* ===== WHATSAPP ===== */
+  .wa-btn { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #25D366; color: white; border: none; border-radius: 11px; font-size: 13px; font-weight: 700; font-family: var(--font); cursor: pointer; width: 100%; justify-content: space-between; margin-bottom: 8px; }
+
+  /* ===== REPORT ===== */
+  .due-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+  .due-rank { width: 26px; height: 26px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+  .bar-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .bar-label { font-size: 10px; color: var(--gray); width: 60px; flex-shrink: 0; }
+  .bar-wrap { flex: 1; background: #e5e7eb; border-radius: 6px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green), var(--green-light)); transition: width 0.5s; }
+  
+  /* ===== LOG ===== */
+  .log-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .log-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--blue-light); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .log-action { font-size: 13px; color: #1a1a1a; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: white; border-radius: 20px 20px 0 0; padding: 22px 18px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--green-dark); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .modal-close { background: #f3f4f6; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; color: var(--gray); display:flex; align-items:center; justify-content:center; font-size: 12px; }
+
+  /* Smart Payment */
+  .smart-amount-box { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .smart-amount-box input { flex: 1; background: transparent; border: none; outline: none; font-size: 22px; font-weight: 700; color: var(--green-dark); font-family: var(--font); }
+  
+  /* Detail View */
+  .detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .detail-stat { background: var(--gray-light); border-radius: 10px; padding: 12px; text-align: center; }
+  .month-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; margin-bottom: 14px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--green-dark); color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; z-index: 9990; opacity: 0; transition: opacity 0.3s; white-space: nowrap;}
+  .toast.show { opacity: 1; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray); }
+  
+  .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+  .loading-overlay.active { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 4px solid #f3f4f6; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div style="font-size:13px;font-weight:600;color:var(--gray);">লোড হচ্ছে...</div></div>
+<div class="toast" id="toast"></div>
+
+<div id="splash-screen">
+  <div class="splash-icon">☪️</div>
+  <div class="splash-title">HTI PayLink</div>
+</div>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+      <h1 style="color:var(--green-dark);font-size:22px;">HTI PayLink</h1>
+      <p style="font-size:11px;color:var(--gray);">আপনার তথ্য দিয়ে প্রবেশ করুন</p>
+    </div>
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchLoginTab('owner')">Owner</div>
+      <div class="login-tab" onclick="switchLoginTab('admin')">Admin</div>
+    </div>
+    <div id="ownerLoginForm">
+      <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="ownerUsername"></div>
+      <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="ownerPassword"></div>
+      <button class="btn-primary" onclick="ownerLogin()">লগইন করুন</button>
+    </div>
+    <div id="adminLoginForm" style="display:none;text-align:center;">
+      <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">আপনার Gmail দিয়ে লগইন করুন</p>
+      <button class="btn-primary btn-google" onclick="adminGoogleLogin()">Google দিয়ে Login</button>
+    </div>
+  </div>
+</div>
+
+<div id="main-app">
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border:2px solid var(--gold-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">☪️</div>
+        <div>
+          <div style="font-family:'Amiri',serif;font-size:16px;font-weight:700;color:var(--gold-light);">HTI PayLink</div>
+          <div style="font-size:9px;opacity:0.8;">HIMAAYAT-E TEHREEK-E ISLAM</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="header-user-badge" id="headerRole"></span>
+        <button onclick="logout()" style="background:none;border:none;color:white;cursor:pointer;font-size:16px;">🚪</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('dashboard',this)">
+      <span class="tab-icon">📊</span>Dashboard
+    </button>
+    <button class="tab" onclick="showPage('members',this)">
+      <span class="tab-icon">👥</span>সদস্য
+    </button>
+    <button class="tab" onclick="showPage('whatsapp',this)">
+      <span class="tab-icon">💬</span>Reminder
+    </button>
+    <button class="tab" onclick="showPage('report',this)">
+      <span class="tab-icon">📈</span>Report
+    </button>
+    <button class="tab" id="tab-admin" onclick="showPage('admin',this)" style="display:none;">
+      <span class="tab-icon">⚙️</span>Admin
+    </button>
+    <button class="tab" onclick="showPage('log',this)">
+      <span class="tab-icon">📋</span>Log
+    </button>
+  </div>
+
+  <div class="content">
+    
+    <div class="page active" id="page-dashboard">
+      <div class="card">
+        <div class="card-title">📅 এই মাসের হিসাব</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="sum-card"><div class="num" id="dashTotalMembers">0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">মোট সদস্য</div></div>
+          <div class="sum-card gold"><div class="num" id="dashCollected">₹0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">এই মাসে আদায়</div></div>
+          <div class="sum-card red"><div class="num" id="dashDueMembers">0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">বাকি আছেন</div></div>
+          <div class="sum-card blue"><div class="num" id="dashDueAmt">₹0</div><div style="font-size:12px;color:var(--gray);margin-top:4px;">মোট বাকি টাকা</div></div>
+        </div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;">
+        <div style="font-size:13px;font-weight:700;color:var(--gold-light);margin-bottom:10px;">📈 সর্বমোট Collection (শুরু থেকে আজ পর্যন্ত)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.1);padding:14px;border-radius:10px;"><div style="font-size:22px;font-weight:700;color:var(--gold-light);" id="grandCollected">₹0</div><div style="font-size:11px;margin-top:4px;opacity:0.9;">মোট আদায়</div></div>
+          <div style="background:rgba(255,255,255,0.1);padding:14px;border-radius:10px;"><div style="font-size:22px;font-weight:700;color:#fca5a5;" id="grandDue">₹0</div><div style="font-size:11px;margin-top:4px;opacity:0.9;">মোট বাকি</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-members">
+      <div id="memberListView">
+        <div class="filter-tabs" id="groupPills"></div>
+        <div class="search-bar">
+          <input type="text" id="memberSearch" placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." oninput="renderMembers()">
+          <button class="btn-add" id="addMemberBtn" onclick="openAddMemberModal()">+</button>
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setMemberFilter('all',this)">সবাই</button>
+          <button class="filter-tab" onclick="setMemberFilter('paid',this)">আদায়</button>
+          <button class="filter-tab" onclick="setMemberFilter('unpaid',this)">বাকি</button>
+        </div>
+        <div id="memberList"></div>
+      </div>
+      <div id="memberDetailView" style="display:none;">
+        <div style="color:var(--blue);font-size:13px;font-weight:600;margin-bottom:14px;cursor:pointer;display:inline-block;" onclick="backToMembers()">← ফিরে যান</div>
+        <div class="card" id="detailContent"></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-whatsapp">
+      <div class="card">
+        <div class="card-title">💬 WhatsApp Reminder</div>
+        <div class="form-group"><label class="form-label">Group বেছে নিন</label><select class="form-select" id="waGroup" onchange="updateWAPreview()"><option value="all">সবাইকে (সব Group)</option></select></div>
+        <div class="form-group"><label class="form-label">কাকে পাঠাবেন?</label><select class="form-select" id="waFilter" onchange="updateWAPreview()"><option value="due">শুধু যারা বাকি আছেন</option><option value="all">সবাইকে</option></select></div>
+      </div>
+      <div class="card"><div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:8px;">Message Preview (প্রথম জনের):</div><div id="waPreview" style="font-size:12px;color:var(--gray);background:#f9fafb;padding:12px;border-radius:8px;white-space:pre-wrap;line-height:1.6;"></div></div>
+      <div id="waButtons"></div>
+    </div>
+
+    <div class="page" id="page-report">
+      <div class="card" style="background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:14px;font-weight:700;color:var(--gold-light);">💰 আমার Group-এর সর্বমোট হিসাব</div>
+          <button class="btn-primary btn-blue" style="width:auto;padding:6px 12px;font-size:11px;" onclick="openExportModal()">📤 Export</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:rgba(255,255,255,0.12);padding:12px;border-radius:10px;text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--gold-light);" id="rptCol">₹0</div><div style="font-size:10px;margin-top:4px;">মোট আদায়</div></div>
+          <div style="background:rgba(255,255,255,0.12);padding:12px;border-radius:10px;text-align:center;"><div style="font-size:22px;font-weight:700;color:#fca5a5;" id="rptDue">₹0</div><div style="font-size:10px;margin-top:4px;">মোট বাকি</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚠️ বকেয়া তালিকা (বেশি থেকে কম)</div>
+        <div id="rptDueList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 নিয়মিত সদস্য (কখনো বকেয়া রাখেননি)</div>
+        <div id="rptRegularList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 মাসিক Collection ইতিহাস</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <select class="form-select" id="rptFrom" onchange="renderMonthlyChart()" style="padding:8px;font-size:12px;"></select>
+          <select class="form-select" id="rptTo" onchange="renderMonthlyChart()" style="padding:8px;font-size:12px;"></select>
+        </div>
+        <div id="rptMonthlyChart"></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-admin">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><div class="card-title" style="margin:0;">⚙️ Groups</div></div>
+        <div id="adminGroupList" style="font-size:13px;color:var(--gray);">Backend Connected - Group Management Data</div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><div class="card-title" style="margin:0;">👮 Admins</div></div>
+        <div id="adminUserList" style="font-size:13px;color:var(--gray);">Backend Connected - Admin Management Data</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-log">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">📋 Activity Log</div>
+          <button id="clearLogBtn" style="background:#fee2e2;color:var(--red);border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:none;" onclick="clearLog()">🗑 মুছুন</button>
+        </div>
+        <div id="logList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-title"><span id="memberModalTitle">নতুন সদস্য</span><button class="modal-close" onclick="closeModal('memberModal')">✕</button></div>
+    <div class="form-group"><label class="form-label">নাম *</label><input type="text" class="form-input" id="mName" placeholder="পুরো নাম"></div>
+    <div class="form-group"><label class="form-label">WhatsApp নম্বর</label><input type="tel" class="form-input" id="mPhone" placeholder="যেমন: 9876543210"></div>
+    <div class="form-group"><label class="form-label">Group *</label><select class="form-select" id="mGroup"></select></div>
+    <button class="btn-primary" onclick="saveMember()" style="margin-top:10px;">✅ সংরক্ষণ করুন</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <div class="modal-title"><span id="payModalTitle">Payment Save করুন</span><button class="modal-close" onclick="closeModal('paymentModal')">✕</button></div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:12px;" id="payModalSub"></div>
+    <div class="smart-amount-box">
+      <span style="font-size:22px;font-weight:700;color:var(--green-dark);">₹</span>
+      <input type="number" id="smartAmount" placeholder="0" min="0" oninput="calcPayment()">
+    </div>
+    <div id="smartPreview" style="display:none;background:#f9fafb;padding:12px;border-radius:8px;font-size:12px;line-height:1.6;margin-bottom:14px;border:1px solid #e5e7eb;"></div>
+    <button class="btn-primary" onclick="savePayment()">✅ Payment Save করুন</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-title"><span>📤 Data Export</span><button class="modal-close" onclick="closeModal('exportModal')">✕</button></div>
+    <div style="font-size:13px;font-weight:600;color:var(--green-dark);margin-bottom:8px;">তারিখ নির্বাচন করুন:</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <select class="form-select" id="expFrom" style="padding:8px;font-size:12px;"></select>
+      <select class="form-select" id="expTo" style="padding:8px;font-size:12px;"></select>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--green-dark);margin-bottom:12px;">কোথায় Export করবেন?</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-primary" style="background:#10b981;" onclick="doExport('excel')">📊 Excel (.csv)</button>
+      <button class="btn-primary btn-blue" onclick="doExport('sheet')">📑 Google Sheet</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+// ===== STATE & DATA =====
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHEPNibxKvpmbbsNMgF4CgTdZHWO1oza8kjvDx30wcS4-3hhquRXKF7XCLR6G5MGl_/exec";
+const API_KEY = "HTI@Secure#2025!";
+const CLIENT_ID = "880382507682-u6h5c5dkn3gkhakaq0srj4kde6ks44ms.apps.googleusercontent.com";
+
+const MONTHS_BN = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+
+let appData = { members:[], payments:[], admins:[], groups:[], activityLog:[] };
+let currentUser = null, currentRole = null;
+let activeGroupId = null, memberFilter = 'all';
+let payingMemberId = null, smartResult = null;
+
+// Date Helpers
+const CY = new Date().getFullYear();
+const CM = new Date().getMonth();
+function monthKey(y,m) { return y+'-'+String(m+1).padStart(2,'0'); }
+function monthLabel(k) { const [y,m]=k.split('-'); return MONTHS_BN[parseInt(m)-1]+' '+y; }
+function currentMonthKey() { return monthKey(CY,CM); }
+function getAllMonths() {
+  const m=[]; for(let y=2024;y<=CY+1;y++) for(let i=0;i<12;i++) m.push(monthKey(y,i)); return m;
+}
+
+// Logic Helpers
+function getPaidMonths(mId) { return appData.payments.filter(p=>p.memberId===mId).map(p=>p.month); }
+function getUnpaidMonths(m) {
+  const paid = getPaidMonths(m.id);
+  const start = m.startMonth || '2024-01';
+  const [sy,sm] = start.split('-').map(Number);
+  const unp = [];
+  for(let y=sy; y<=CY; y++) {
+    let s = (y===sy)?sm-1:0;
+    let e = (y===CY)?CM:11;
+    for(let mo=s; mo<=e; mo++) { const k=monthKey(y,mo); if(!paid.includes(k)) unp.push(k); }
+  }
+  return unp;
+}
+
+// UI Helpers
+function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// ===== INIT & AUTH =====
+window.onload = () => {
+  setTimeout(() => {
+    document.getElementById('splash-screen').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash-screen').style.display = 'none';
+      const u = sessionStorage.getItem('htiUser');
+      if(u) { const p=JSON.parse(u); currentUser=p.user; currentRole=p.role; startApp(); }
+      else document.getElementById('login-screen').classList.add('active');
+    }, 600);
+  }, 1500);
+}
+
+function switchLoginTab(t) {
+  document.querySelectorAll('.login-tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='owner')||(i===1&&t==='admin')));
+  document.getElementById('ownerLoginForm').style.display = t==='owner'?'block':'none';
+  document.getElementById('adminLoginForm').style.display = t==='admin'?'block':'none';
+}
+
+function ownerLogin() {
+  if(document.getElementById('ownerUsername').value==='Samsad' && document.getElementById('ownerPassword').value==='@#Samsad#@') {
+    currentUser = {name:'Samsad',email:'owner'}; currentRole='owner';
+    sessionStorage.setItem('htiUser',JSON.stringify({user:currentUser,role:currentRole})); startApp();
+  } else showToast('ভুল Username/Password');
+}
+
+function adminGoogleLogin() {
+  google.accounts.id.initialize({ client_id: CLIENT_ID, callback: handleGoogleRes });
+  google.accounts.id.prompt();
+}
+
+async function handleGoogleRes(res) {
+  showLoading();
+  const payload = JSON.parse(atob(res.credential.split('.')[1]));
+  await fetchBackend();
+  hideLoading();
+  const a = appData.admins.find(x=>x.email===payload.email && !x.suspended);
+  if(a) { currentUser={name:a.name||payload.email, email:a.email}; currentRole='admin'; sessionStorage.setItem('htiUser',JSON.stringify({user:currentUser,role:currentRole})); startApp(); }
+  else showToast('Admin access নেই বা suspended');
+}
+
+function logout() { sessionStorage.clear(); window.location.reload(); }
+
+async function fetchBackend() {
+  try {
+    const r = await fetch(SCRIPT_URL+'?apiKey='+API_KEY+'&action=getData');
+    const d = await r.json();
+    if(d.success) appData = d.data;
+    if(!appData.members) appData.members=[]; if(!appData.payments) appData.payments=[];
+    if(!appData.groups) appData.groups=[{id:'g1',name:'HTI SPECIAL',amount:100,color:'#1a6b3a'}];
+    if(!appData.activityLog) appData.activityLog=[];
+  } catch(e) {}
+}
+
+async function startApp() {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('main-app').classList.add('active');
+  document.getElementById('headerRole').textContent = currentRole==='owner'?'👑 Owner':'👮 Admin';
+  showLoading(); await fetchBackend(); hideLoading();
+  
+  if(currentRole==='owner') {
+    document.getElementById('tab-admin').style.display = 'block';
+    document.getElementById('clearLogBtn').style.display = 'block';
+  }
+  
+  initSelects();
+  updateDashboard(); renderGroupPills(); renderMembers(); renderWA();
+}
+
+function showPage(p, el) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active'); el.classList.add('active');
+  if(p==='dashboard') updateDashboard();
+  if(p==='members') { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; renderGroupPills(); renderMembers(); }
+  if(p==='whatsapp') renderWA();
+  if(p==='report') renderReport();
+  if(p==='log') renderLog();
+}
+
+function initSelects() {
+  const ms = getAllMonths();
+  const opts = ms.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  if(document.getElementById('rptFrom')) {
+    document.getElementById('rptFrom').innerHTML = opts; document.getElementById('rptTo').innerHTML = opts;
+    document.getElementById('rptFrom').selectedIndex = Math.max(0, ms.indexOf(currentMonthKey())-5);
+    document.getElementById('rptTo').value = currentMonthKey();
+  }
+  if(document.getElementById('expFrom')) {
+    document.getElementById('expFrom').innerHTML = opts; document.getElementById('expTo').innerHTML = opts;
+    document.getElementById('expFrom').value = '2024-01'; document.getElementById('expTo').value = currentMonthKey();
+  }
+}
+
+// ===== DASHBOARD =====
+function updateDashboard() {
+  let mems=0, col=0, dueM=0, dueA=0, gCol=0, gDue=0;
+  const mk = currentMonthKey();
+  appData.members.forEach(m => {
+    const g = appData.groups.find(x=>x.id===m.groupId); if(!g) return;
+    mems++;
+    const paidAll = getPaidMonths(m.id);
+    if(paidAll.includes(mk)) col += g.amount; else { dueM++; dueA += g.amount; }
+    const pastPaid = paidAll.filter(k=>k<=mk);
+    gCol += pastPaid.length * g.amount;
+    gDue += getUnpaidMonths(m).length * g.amount;
+  });
+  document.getElementById('dashTotalMembers').textContent = mems;
+  document.getElementById('dashCollected').textContent = '₹'+col;
+  document.getElementById('dashDueMembers').textContent = dueM;
+  document.getElementById('dashDueAmt').textContent = '₹'+dueA;
+  document.getElementById('grandCollected').textContent = '₹'+gCol;
+  document.getElementById('grandDue').textContent = '₹'+gDue;
+}
+
+// ===== MEMBERS =====
+function renderGroupPills() {
+  if(!activeGroupId && appData.groups.length>0) activeGroupId = appData.groups[0].id;
+  document.getElementById('groupPills').innerHTML = appData.groups.map(g=>`<button class="filter-tab ${g.id===activeGroupId?'active':''}" onclick="swGrp('${g.id}',this)">${g.name}</button>`).join('');
+}
+function swGrp(id, el) { activeGroupId=id; document.querySelectorAll('#groupPills .filter-tab').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderMembers(); }
+function setMemberFilter(f, el) { memberFilter=f; document.querySelectorAll('#page-members > #memberListView > .filter-tabs:last-of-type .filter-tab').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderMembers(); }
+
+function renderMembers() {
+  const list = document.getElementById('memberList');
+  const g = appData.groups.find(x=>x.id===activeGroupId); if(!g) return;
+  const s = document.getElementById('memberSearch').value.toLowerCase();
+  const mk = currentMonthKey();
+  
+  let ms = appData.members.filter(m=>m.groupId===activeGroupId && m.name.toLowerCase().includes(s));
+  if(memberFilter==='paid') ms = ms.filter(m=>getPaidMonths(m.id).includes(mk));
+  if(memberFilter==='unpaid') ms = ms.filter(m=>!getPaidMonths(m.id).includes(mk));
+
+  if(ms.length===0) { list.innerHTML='<div class="empty-state"><div class="emoji">👥</div><p>কোনো সদস্য নেই।</p></div>'; return; }
+  
+  list.innerHTML = ms.map(m=>{
+    const paid = getPaidMonths(m.id).includes(mk);
+    return `<div class="member-card" onclick="openMemberDetail('${m.id}')">
+      <div class="member-avatar" style="background:${g.color||'var(--blue)'}">${m.name.charAt(0)}</div>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:600;">${m.name}</div><div style="font-size:11px;color:var(--gray);">${m.phone||'নম্বর নেই'}</div></div>
+      <span class="badge ${paid?'badge-paid':'badge-unpaid'}">${paid?'✅ আদায়':'❌ বাকি'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ===== MEMBER DETAIL =====
+function openMemberDetail(id) {
+  const m = appData.members.find(x=>x.id===id); if(!m) return;
+  const g = appData.groups.find(x=>x.id===m.groupId);
+  const unp = getUnpaidMonths(m);
+  const paidMs = getPaidMonths(m.id);
+  const surplus = m.surplusBalance||0;
+  
+  let html = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+    <div style="width:50px;height:50px;border-radius:14px;background:${g.color||'var(--blue)'};color:white;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;">${m.name.charAt(0)}</div>
+    <div><div style="font-size:18px;font-weight:700;">${m.name}</div><div style="font-size:12px;color:var(--gray);">${g.name} • ${m.phone||'নম্বর নেই'}</div></div>
+  </div>`;
+  
+  html += `<div class="detail-stats">
+    <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--green-dark);">₹${paidMs.filter(k=>k<=currentMonthKey()).length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট দিয়েছেন</div></div>
+    <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট বাকি</div></div>
+  </div>`;
+  
+  if(surplus>0) html+=`<div style="background:#fef3c7;border-radius:10px;padding:12px;text-align:center;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#92400e;">₹${surplus}</div><div style="font-size:10px;color:#92400e;">অতিরিক্ত জমা</div></div>`;
+  
+  html += `<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:16px;"><button class="btn-primary" onclick="openPayment('${m.id}')">💳 Payment করুন</button></div>`;
+  
+  if(unp.length>0) html+=`<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ বকেয়া মাসগুলো:</div><div class="month-chips">${unp.map(k=>`<span class="badge badge-unpaid">${monthLabel(k)}</span>`).join('')}</div>`;
+  
+  document.getElementById('memberListView').style.display='none';
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('memberDetailView').style.display='block';
+}
+
+function backToMembers() { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; }
+
+function openAddMemberModal() {
+  document.getElementById('mName').value=''; document.getElementById('mPhone').value='';
+  document.getElementById('mGroup').innerHTML = appData.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+  openModal('memberModal');
+}
+function saveMember() {
+  const name=document.getElementById('mName').value.trim(), phone=document.getElementById('mPhone').value.trim(), groupId=document.getElementById('mGroup').value;
+  if(!name) { showToast('নাম দিন!'); return; }
+  appData.members.push({ id:'m'+Date.now(), name, phone, groupId, startMonth:currentMonthKey(), surplusBalance:0 });
+  addLog('➕',`${name} যুক্ত হয়েছেন`);
+  closeModal('memberModal'); renderMembers(); updateDashboard(); showToast('সদস্য যোগ হয়েছে!');
+}
+
+// ===== SMART PAYMENT & WHATSAPP RECEIPT =====
+function openPayment(id) {
+  payingMemberId = id; smartResult = null;
+  const m = appData.members.find(x=>x.id===id); const g = appData.groups.find(x=>x.id===m.groupId);
+  document.getElementById('payModalSub').textContent = `${m.name} • ${g.name} (₹${g.amount}/মাস)`;
+  document.getElementById('smartAmount').value=''; document.getElementById('smartPreview').style.display='none';
+  openModal('paymentModal');
+}
+
+function calcPayment() {
+  const m = appData.members.find(x=>x.id===payingMemberId); const g = appData.groups.find(x=>x.id===m.groupId);
+  const amt = parseInt(document.getElementById('smartAmount').value)||0;
+  if(amt<=0) { document.getElementById('smartPreview').style.display='none'; smartResult=null; return; }
+  
+  let rem = amt + (m.surplusBalance||0);
+  const unp = getUnpaidMonths(m).sort();
+  const pAdd=[], aAdd=[];
+  
+  for(let k of unp) { if(rem>=g.amount) { pAdd.push(k); rem-=g.amount; } else break; }
+  for(let i=1;i<=24;i++){
+    if(rem<g.amount) break;
+    let k = monthKey(CY, CM+i);
+    if(!getPaidMonths(m.id).includes(k) && !unp.includes(k)) { aAdd.push(k); rem-=g.amount; }
+  }
+  
+  smartResult = { paidToAdd:pAdd, advToAdd:aAdd, newSurp:rem, inputAmt:amt };
+  let h='';
+  if(pAdd.length>0) h+=`<div style="color:var(--green-dark);">✅ বকেয়া ক্লিয়ার: ${pAdd.length} মাস</div>`;
+  if(aAdd.length>0) h+=`<div style="color:var(--blue);">🔮 অগ্রিম: ${aAdd.length} মাস</div>`;
+  if(rem>0) h+=`<div style="color:#92400e;">💰 জমা থাকবে: ₹${rem}</div>`;
+  document.getElementById('smartPreview').innerHTML = h || `<div style="color:#92400e;">পুরো টাকা জমা থাকবে</div>`;
+  document.getElementById('smartPreview').style.display='block';
+}
+
+function savePayment() {
+  if(!smartResult || smartResult.inputAmt<=0) { showToast('টাকার পরিমাণ লিখুন!'); return; }
+  const m = appData.members.find(x=>x.id===payingMemberId); const g = appData.groups.find(x=>x.id===m.groupId);
+  
+  [...smartResult.paidToAdd, ...smartResult.advToAdd].forEach(mo => {
+    appData.payments.push({ id:'p'+Date.now()+Math.random(), memberId:m.id, month:mo, amount:g.amount, date:new Date().toISOString() });
+  });
+  m.surplusBalance = smartResult.newSurp;
+  
+  addLog('💳',`${m.name}-এর ₹${smartResult.inputAmt} পেমেন্ট নেওয়া হয়েছে`);
+  closeModal('paymentModal');
+  openMemberDetail(m.id); updateDashboard();
+  showToast('✅ Payment Save হয়েছে!');
+  
+  sendReceipt(m, g, smartResult.paidToAdd, smartResult.advToAdd, smartResult.inputAmt, smartResult.newSurp);
+}
+
+function sendReceipt(m, g, paidMs, advMs, inputAmt, surplus) {
+  if(!m.phone) return;
+  const allMs = [...paidMs, ...advMs].map(k => monthLabel(k)).join(', ');
+  
+  let msg = `🧾 পেমেন্ট রসিদ\n\n`;
+  msg += `নাম: ${m.name}\n`;
+  msg += `গ্রুপ: ${g.name}\n`;
+  msg += `মাস: ${allMs || 'কোনো মাস নেই'}\n`;
+  msg += `পরিমাণ: ₹${inputAmt}\n`;
+  if(surplus > 0) {
+    msg += `অতিরিক্ত: ₹${surplus}\n`;
+  }
+  msg += `তারিখ: ${new Date().toLocaleDateString('en-IN')}\n\n`;
+  msg += `— HTI PayLink`;
+  
+  const phone = m.phone.replace(/\D/g,'').replace(/^0+/,'');
+  const waPhone = phone.startsWith('91') ? phone : '91'+phone;
+  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ===== WHATSAPP REMINDER =====
+function renderWA() {
+  document.getElementById('waGroup').innerHTML = '<option value="all">সবাইকে (সব Group)</option>' + appData.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+  updateWAPreview();
+}
+function updateWAPreview() {
+  const wg = document.getElementById('waGroup').value, wf = document.getElementById('waFilter').value;
+  let ms = appData.members;
+  if(wg!=='all') ms = ms.filter(m=>m.groupId===wg);
+  if(wf==='due') ms = ms.filter(m=>getUnpaidMonths(m).length>0);
+  
+  const btnC = document.getElementById('waButtons');
+  if(ms.length===0) { document.getElementById('waPreview').textContent='কোনো সদস্য নেই।'; btnC.innerHTML=''; return; }
+  
+  const fM = ms[0]; const fG = appData.groups.find(g=>g.id===fM.groupId);
+  const fUnp = getUnpaidMonths(fM);
+  let pTxt = `আস্সালামু আলাইকুম ওয়া রাহমাতুল্লাহ,\n\nআশা করি আল্লাহর রহমতে ভালো আছেন।\nআপনার চাঁদার বর্তমান অবস্থা:\n`;
+  if(fUnp.length>0) pTxt += `⚠️ বাকি মাস: ${fUnp.map(k=>monthLabel(k)).join(', ')}\n💰 মোট বাকি: ₹${fUnp.length*(fG?fG.amount:0)}\nঅনুগ্রহ করে পরিশোধ করুন।\n\n`;
+  else pTxt += `✅ কোনো বাকি নেই! আলহামদুলিল্লাহ।\n\n`;
+  pTxt += `জাযাকাল্লাহু খায়রান 🌙\n— HTI PayLink`;
+  document.getElementById('waPreview').textContent = pTxt;
+  
+  btnC.innerHTML = ms.map(m=>{
+    if(!m.phone) return `<div style="background:white;padding:12px;border-radius:11px;margin-bottom:8px;border:1px solid #e5e7eb;font-size:12px;"><div style="font-weight:600;">${m.name}</div><div style="color:var(--gray);font-size:10px;">📵 WhatsApp নম্বর নেই</div></div>`;
+    const unp = getUnpaidMonths(m).length;
+    return `<button class="wa-btn" onclick="sendReminder('${m.id}')">
+      <div style="display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-weight:700;">${m.name.charAt(0)}</div><div style="text-align:left;"><div style="font-size:13px;">${m.name}</div><div style="font-size:10px;">${unp>0?`⚠️ ${unp} মাস বাকি`:'✅ সব দেওয়া আছে'}</div></div></div>
+      <span style="font-size:18px;">📲</span>
+    </button>`;
+  }).join('');
+}
+function sendReminder(mId) {
+  const m=appData.members.find(x=>x.id===mId); const g=appData.groups.find(x=>x.id===m.groupId);
+  const unp = getUnpaidMonths(m);
+  let msg = `আস্সালামু আলাইকুম ওয়া রাহমাতুল্লাহ,\n\nআশা করি আল্লাহর রহমতে ভালো আছেন।\nআপনার চাঁদার বর্তমান অবস্থা:\n`;
+  if(unp.length>0) msg += `⚠️ বাকি মাস: ${unp.map(k=>monthLabel(k)).join(', ')}\n💰 মোট বাকি: ₹${unp.length*(g?g.amount:0)}\nঅনুগ্রহ করে পরিশোধ করুন।\n\n`;
+  else msg += `✅ কোনো বাকি নেই! আলহামদুলিল্লাহ।\n\n`;
+  msg += `জাযাকাল্লাহু খায়রান 🌙\n— HTI PayLink`;
+  const p = m.phone.replace(/\D/g,'').replace(/^0+/,'');
+  window.open(`https://wa.me/${p.startsWith('91')?p:'91'+p}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ===== REPORT =====
+function renderReport() {
+  let rCol=0, rDue=0;
+  const mk = currentMonthKey();
+  let allDue = [], regular = [];
+  
+  appData.members.forEach(m=>{
+    const g = appData.groups.find(x=>x.id===m.groupId); if(!g) return;
+    const pastPaid = getPaidMonths(m.id).filter(k=>k<=mk);
+    rCol += pastPaid.length * g.amount;
+    const unp = getUnpaidMonths(m);
+    if(unp.length>0) { rDue+=unp.length*g.amount; allDue.push({m, g, unp:unp.length}); }
+    else if(pastPaid.length>0) regular.push({m,g,mths:pastPaid.length});
+  });
+  
+  document.getElementById('rptCol').textContent = '₹'+rCol; document.getElementById('rptDue').textContent = '₹'+rDue;
+  
+  allDue.sort((a,b)=> (b.unp*b.g.amount) - (a.unp*a.g.amount));
+  document.getElementById('rptDueList').innerHTML = allDue.length===0?'<div class="empty-state">কেউ বকেয়া নেই! আলহামদুলিল্লাহ ✅</div>' : allDue.map((x,i)=>{
+    const mc = i===0?'#dc2626':i===1?'#f59e0b':i===2?'#6b7280':'#e5e7eb';
+    const mcText = i<=2?'white':'#6b7280';
+    return `<div class="due-item"><div class="due-rank" style="background:${mc};color:${mcText};">${i+1}</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${x.m.name}</div><div style="font-size:11px;color:var(--gray);">${x.g.name} • ${x.unp} মাস বকেয়া</div></div><div style="font-size:13px;font-weight:700;color:var(--red);">₹${x.unp*x.g.amount}</div></div>`;
+  }).join('');
+  
+  document.getElementById('rptRegularList').innerHTML = regular.length===0?'<div class="empty-state">এখনো কোনো নিয়মিত সদস্য নেই।</div>' : regular.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5;"><span style="font-size:18px;">🏆</span><div style="flex:1;"><div style="font-size:13px;font-weight:600;">${x.m.name}</div><div style="font-size:11px;color:var(--gray);">${x.g.name} • ${x.mths} মাস নিয়মিত</div></div><span class="badge badge-paid">✓ নিয়মিত</span></div>`).join('');
+  
+  renderMonthlyChart();
+}
+
+function renderMonthlyChart() {
+  const f=document.getElementById('rptFrom').value, t=document.getElementById('rptTo').value;
+  if(!f||!t) return;
+  const [fy,fm]=f.split('-').map(Number); const [ty,tm]=t.split('-').map(Number);
+  const ms=[]; let y=fy, m=fm; while(y<ty||(y===ty&&m<=tm)){ ms.push(monthKey(y,m-1)); m++; if(m>12){m=1;y++;} }
+  
+  const data = ms.map(k=>{
+    let c=0; appData.payments.filter(p=>p.month===k).forEach(p=>{ c+=p.amount; });
+    return {l:MONTHS_BN[parseInt(k.split('-')[1])-1].substring(0,3)+' '+k.split('-')[0], c};
+  });
+  const mx = Math.max(...data.map(d=>d.c), 1);
+  document.getElementById('rptMonthlyChart').innerHTML = data.map(d=>`<div class="bar-row"><div class="bar-label">${d.l}</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(d.c/mx*100)}%"></div></div><div style="font-size:11px;font-weight:700;color:var(--green-dark);width:50px;text-align:right;">₹${d.c}</div></div>`).join('');
+}
+
+// ===== EXPORT =====
+function openExportModal() { openModal('exportModal'); }
+function doExport(type) {
+  closeModal('exportModal');
+  const f=document.getElementById('expFrom').value, t=document.getElementById('expTo').value;
+  const ms = getAllMonths().filter(m=>m>=f&&m<=t);
+  let csv = 'Name,Group,' + ms.map(m=>monthLabel(m)).join(',') + ',Total\n';
+  
+  appData.members.forEach(m=>{
+    const g=appData.groups.find(x=>x.id===m.groupId);
+    const paidMs = getPaidMonths(m.id);
+    let r = `${m.name},${g?g.name:''}`;
+    let tot=0;
+    ms.forEach(mo=>{ if(m.startMonth<=mo){ const pd=paidMs.includes(mo); r+=`,${pd?'Paid':'Due'}`; if(pd)tot+=(g?g.amount:0); } else r+=`,-`; });
+    csv += r + `,${tot}\n`;
+  });
+  
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='HTI_Data_Export.csv'; a.click();
+  
+  if(type==='sheet') setTimeout(()=>showToast('CSV ফাইলটি Google Sheet-এ Import করুন।'),1000);
+  else showToast('✅ Excel (CSV) Export হয়েছে!');
+}
+
+// ===== LOG =====
+function addLog(ic, ac) {
+  appData.activityLog.unshift({icon:ic, action:ac, by:currentUser.name||'Admin', time:new Date().toLocaleString('bn-BD')});
+}
+function renderLog() {
+  const el = document.getElementById('logList');
+  if(appData.activityLog.length===0) { el.innerHTML='<div class="empty-state"><div class="emoji">📋</div><p>কোনো activity নেই।</p></div>'; return; }
+  el.innerHTML = appData.activityLog.map(l=>`<div class="log-item"><div class="log-icon">${l.icon}</div><div style="flex:1;"><div class="log-action">${l.action}</div><div style="log-meta" style="font-size:10px; color:var(--gray); margin-top:2px;">${l.by} • ${l.time}</div></div></div>`).join('');
+}
+function clearLog() {
+  if(currentRole!=='owner') return;
+  if(confirm('সব Log মুছবেন?')) { appData.activityLog=[]; renderLog(); showToast('🗑 Log মুছে গেছে।'); }
+}
+</script>
+</body>
+</html>
