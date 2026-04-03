@@ -82,7 +82,7 @@
   .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
   .search-bar input { flex: 1; border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-family: var(--font); outline: none; }
   .search-bar input:focus { border-color: var(--blue); }
-  .btn-add { background: var(--blue); color: white; border: none; border-radius: 10px; padding: 0 16px; font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37,99,235,0.2); }
+  .btn-add { background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37,99,235,0.2); display:flex; align-items:center; justify-content:center; }
   .filter-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
   .filter-tabs::-webkit-scrollbar { display: none; }
   .filter-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid #e5e7eb; color: var(--gray); background: white; transition: all 0.2s; }
@@ -232,7 +232,7 @@
         <div class="filter-tabs" id="groupPills"></div>
         <div class="search-bar">
           <input type="text" id="memberSearch" placeholder="নাম বা নম্বর দিয়ে খুঁজুন..." oninput="renderMembers()">
-          <button class="btn-add" id="addMemberBtn" onclick="openAddMemberModal()">+</button>
+          <button class="btn-add" style="width:44px; padding:0;" onclick="openAddMemberModal()">+</button>
         </div>
         <div class="filter-tabs">
           <button class="filter-tab active" onclick="setMemberFilter('all',this)">সবাই</button>
@@ -288,12 +288,18 @@
 
     <div class="page" id="page-admin">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><div class="card-title" style="margin:0;">⚙️ Groups</div></div>
-        <div id="adminGroupList" style="font-size:13px;color:var(--gray);">Backend Connected - Group Management Data</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">⚙️ Groups</div>
+          <button class="btn-add" style="width:30px;height:30px;font-size:18px;padding:0;" onclick="promptAddGroup()">+</button>
+        </div>
+        <div id="adminGroupList"></div>
       </div>
       <div class="card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><div class="card-title" style="margin:0;">👮 Admins</div></div>
-        <div id="adminUserList" style="font-size:13px;color:var(--gray);">Backend Connected - Admin Management Data</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">👮 Admins</div>
+          <button class="btn-add" style="width:30px;height:30px;font-size:18px;padding:0;" onclick="promptAddAdmin()">+</button>
+        </div>
+        <div id="adminUserList"></div>
       </div>
     </div>
 
@@ -472,6 +478,7 @@ function showPage(p, el) {
   if(p==='members') { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; renderGroupPills(); renderMembers(); }
   if(p==='whatsapp') renderWA();
   if(p==='report') renderReport();
+  if(p==='admin') renderAdminPanel();
   if(p==='log') renderLog();
 }
 
@@ -520,7 +527,7 @@ function setMemberFilter(f, el) { memberFilter=f; document.querySelectorAll('#pa
 
 function renderMembers() {
   const list = document.getElementById('memberList');
-  const g = appData.groups.find(x=>x.id===activeGroupId); if(!g) return;
+  const g = appData.groups.find(x=>x.id===activeGroupId); if(!g) { list.innerHTML=''; return; }
   const s = document.getElementById('memberSearch').value.toLowerCase();
   const mk = currentMonthKey();
   
@@ -581,7 +588,80 @@ function saveMember() {
   if(!name) { showToast('নাম দিন!'); return; }
   appData.members.push({ id:'m'+Date.now(), name, phone, groupId, startMonth:currentMonthKey(), surplusBalance:0 });
   addLog('➕',`${name} যুক্ত হয়েছেন`);
-  closeModal('memberModal'); renderMembers(); updateDashboard(); showToast('সদস্য যোগ হয়েছে!');
+  closeModal('memberModal'); 
+  
+  // FIX: Switch to the newly added member's group automatically
+  activeGroupId = groupId;
+  renderGroupPills(); 
+  renderMembers(); 
+  updateDashboard(); 
+  showToast('✅ সদস্য যোগ হয়েছে!');
+}
+
+// ===== ADMIN PANEL (Groups & Admins) =====
+function renderAdminPanel() {
+  renderAdminGroups();
+  renderAdminUsers();
+}
+
+function renderAdminGroups() {
+  const c = document.getElementById('adminGroupList');
+  if(appData.groups.length===0) { c.innerHTML='<div class="empty-state">কোনো Group নেই</div>'; return; }
+  c.innerHTML = appData.groups.map(g=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:24px;height:24px;border-radius:6px;background:${g.color||'var(--blue)'};"></div>
+      <div><div style="font-size:13px;font-weight:600;">${g.name}</div><div style="font-size:11px;color:var(--gray);">₹${g.amount} / মাস</div></div>
+    </div>
+    <button style="border:none;background:none;color:var(--red);font-size:18px;cursor:pointer;" onclick="deleteGroup('${g.id}')">🗑</button>
+  </div>`).join('');
+}
+
+function promptAddGroup() {
+  const name = prompt("নতুন Group-এর নাম দিন:");
+  if(!name) return;
+  const amount = prompt("মাসিক চাঁদার পরিমাণ (₹) দিন:");
+  if(!amount || isNaN(amount)) return;
+  
+  const newGroup = { id:'g'+Date.now(), name:name, amount:parseInt(amount), color:'#2563eb' };
+  appData.groups.push(newGroup);
+  
+  if(!activeGroupId) activeGroupId = newGroup.id;
+  renderAdminPanel(); renderGroupPills(); updateDashboard();
+  showToast('✅ Group যোগ হয়েছে!');
+}
+
+function deleteGroup(id) {
+  if(confirm('এই Group ডিলিট করতে চান? এর সাথে থাকা সব মেম্বারও ডিলিট হয়ে যাবে!')) {
+    appData.groups = appData.groups.filter(x=>x.id!==id);
+    appData.members = appData.members.filter(x=>x.groupId!==id);
+    if(activeGroupId===id) activeGroupId = appData.groups.length>0?appData.groups[0].id:null;
+    renderAdminPanel(); renderGroupPills(); renderMembers(); updateDashboard();
+    showToast('🗑 Group ডিলিট হয়েছে!');
+  }
+}
+
+function renderAdminUsers() {
+  const c = document.getElementById('adminUserList');
+  if(appData.admins.length===0) { c.innerHTML='<div class="empty-state">কোনো Admin নেই</div>'; return; }
+  c.innerHTML = appData.admins.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;">
+    <div><div style="font-size:13px;font-weight:600;">${a.name}</div><div style="font-size:11px;color:var(--gray);">${a.email}</div></div>
+    <button style="border:none;background:none;color:var(--red);font-size:18px;cursor:pointer;" onclick="deleteAdmin('${a.email}')">🗑</button>
+  </div>`).join('');
+}
+
+function promptAddAdmin() {
+  const email = prompt("নতুন Admin-এর Gmail দিন:");
+  if(!email) return;
+  const name = prompt("Admin-এর নাম দিন (ঐচ্ছিক):");
+  appData.admins.push({ email:email, name:name||email, suspended:false });
+  renderAdminPanel(); showToast('✅ Admin যোগ হয়েছে!');
+}
+
+function deleteAdmin(email) {
+  if(confirm('এই Admin কে রিমুভ করতে চান?')) {
+    appData.admins = appData.admins.filter(x=>x.email!==email);
+    renderAdminPanel(); showToast('🗑 Admin রিমুভ হয়েছে!');
+  }
 }
 
 // ===== SMART PAYMENT & WHATSAPP RECEIPT =====
