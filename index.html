@@ -1,41 +1,158 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTI PayLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {margin:0;font-family:'Hind Siliguri',sans-serif;background:#f9fafb;}
+
+.header {
+  padding:14px;
+  background:#fff;
+  border-bottom:1px solid #eee;
+  display:flex;
+  justify-content:space-between;
+}
+
+.logo {color:#00b894;font-weight:700;}
+
+.tabs {display:flex;background:#fff;border-bottom:1px solid #eee;}
+.tab {flex:1;text-align:center;padding:12px;cursor:pointer;}
+.tab.active {color:#00b894;border-bottom:2px solid #00b894;}
+
+.section {display:none;padding:16px;}
+.section.active {display:block;}
+
+.card {
+  background:#fff;
+  padding:16px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+#loginScreen {
+  position:fixed;
+  inset:0;
+  background:#f9fafb;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.login-box {
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:320px;
+}
+
+input {
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border:1px solid #ddd;
+  border-radius:8px;
+}
+
+button {
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#00b894;
+  color:white;
+  cursor:pointer;
+  margin-bottom:8px;
+}
+
+.admin-btn {background:#3b82f6;}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h3 style="text-align:center;color:#00b894;">HTI PayLink</h3>
+
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="ownerLogin()">Owner Login</button>
+    <button class="admin-btn" onclick="adminLogin()">Admin (Google)</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+<div class="header">
+  <div class="logo">HTI PayLink</div>
+  <div onclick="logout()">🚪</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard',this)">Dashboard</div>
+  <div class="tab" onclick="switchTab('members',this)">Members</div>
+  <div class="tab" onclick="switchTab('reminder',this)">Reminder</div>
+  <div class="tab" onclick="switchTab('report',this)">Report</div>
+</div>
+
+<div id="dashboard" class="section active">
+  <div class="card">Dashboard Ready ✅</div>
+</div>
+
+<div id="members" class="section">
+  <div id="memberList"></div>
+</div>
+
+<div id="reminder" class="section">
+  <div class="card">Reminder Section</div>
+</div>
+
+<div id="report" class="section">
+  <div class="card">Report Section</div>
+</div>
+
+</div>
+
 <script>
 
-// Dummy data (temporary)
+// ===== DUMMY MEMBERS =====
 let members = [
   {name: "Rahim", phone: "9876543210"},
   {name: "Karim", phone: "9123456780"}
 ];
 
-// Show members
-function renderMembers() {
-  const list = document.getElementById("members");
-  list.innerHTML = "";
-
-  members.forEach(m => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <b>${m.name}</b><br>
-      <span>${m.phone}</span>
-    `;
-    list.appendChild(div);
-  });
-}
-
-// Login
+// ===== LOGIN =====
 function ownerLogin(){
   const u=document.getElementById("username").value;
   const p=document.getElementById("password").value;
 
   if(u==="Samsad" && p==="@#Samsad#@"){
     document.getElementById("loginScreen").style.display="none";
-    renderMembers(); // IMPORTANT
+    renderMembers();
   } else {
     alert("Wrong login");
   }
 }
 
-// Tabs
+function adminLogin(){
+  alert("Google login next step");
+}
+
+// ===== LOGOUT =====
+function logout(){
+  location.reload();
+}
+
+// ===== TAB SWITCH =====
 function switchTab(id,el){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   el.classList.add("active");
@@ -44,4 +161,20 @@ function switchTab(id,el){
   document.getElementById(id).classList.add("active");
 }
 
+// ===== RENDER MEMBERS =====
+function renderMembers(){
+  const list=document.getElementById("memberList");
+  list.innerHTML="";
+
+  members.forEach(m=>{
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`<b>${m.name}</b><br>${m.phone}`;
+    list.appendChild(div);
+  });
+}
+
 </script>
+
+</body>
+</html>
