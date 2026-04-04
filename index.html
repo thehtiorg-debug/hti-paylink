@@ -473,7 +473,7 @@
 <script>
 // ===== STATE =====
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHEPNibxKvpmbbsNMgF4CgTdZHWO1oza8kjvDx30wcS4-3hhquRXKF7XCLR6G5MGl_/exec";
-const API_KEY = "HTI@Secure#2025!";
+const API_KEY = "HTISecure2025";
 const CLIENT_ID = "880382507682-u6h5c5dkn3gkhakaq0srj4kde6ks44ms.apps.googleusercontent.com";
 
 const MONTHS_BN = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
@@ -636,7 +636,7 @@ async function saveToBackend() {
     showLoading();
     const r = await fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey: API_KEY, action: 'saveData', payload: appData })
     });
     const d = await r.json();
