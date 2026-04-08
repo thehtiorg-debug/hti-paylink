@@ -25,10 +25,9 @@
     --font: 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-  button * { pointer-events: none !important; }
-  button span, button div, button p, button i, button svg, button img { pointer-events: none !important; }
-  .member-card, .sum-card, .filter-tab, .login-tab, .group-breakdown-item, .due-item, .admin-item, .log-item { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+  button { cursor: pointer; }
+  button * { pointer-events: none; }
+  button span, button div { pointer-events: none; }
   body { font-family: var(--font); background: var(--cream); min-height: 100vh; color: #1a1a1a; overflow-x: hidden; }
 
   #splash-screen { position: fixed; inset: 0; background: linear-gradient(160deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.6s ease; }
@@ -373,12 +372,11 @@
 <div class="modal-overlay" id="memberModal">
   <div class="modal">
     <div class="modal-title"><span id="memberModalTitle">নতুন সদস্য</span><button class="modal-close" onclick="closeModal('memberModal')">✕</button></div>
-    <input type="hidden" id="editingMemberId">
     <div class="form-group"><label class="form-label">নাম *</label><input type="text" class="form-input" id="mName" placeholder="পুরো নাম"></div>
     <div class="form-group"><label class="form-label">WhatsApp নম্বর</label><input type="tel" class="form-input" id="mPhone" placeholder="যেমন: 9876543210"></div>
-    <div class="form-group" id="memberGroupRow"><label class="form-label">Group *</label><select class="form-select" id="mGroup"></select></div>
+    <div class="form-group"><label class="form-label">Group *</label><select class="form-select" id="mGroup"></select></div>
     <!-- FIX #6: Month selection when adding member -->
-    <div class="form-group" id="memberStartMonthRow"><label class="form-label">যোগদানের মাস *</label><select class="form-select" id="mStartMonth"></select></div>
+    <div class="form-group"><label class="form-label">যোগদানের মাস *</label><select class="form-select" id="mStartMonth"></select></div>
     <button class="btn-primary" onclick="saveMember()" style="margin-top:10px;">✅ সংরক্ষণ করুন</button>
   </div>
 </div>
@@ -484,6 +482,8 @@ let appData = { members:[], payments:[], admins:[], groups:[], activityLog:[], d
 let currentUser = null, currentRole = null, currentAdminData = null;
 let activeGroupId = null, memberFilter = 'all';
 let payingMemberId = null, smartResult = null;
+let payEditDeletedMonths = new Set();
+let editingPayMemberId = null;
 let selectedGroupColor = '#2563eb';
 let monthlyBreakdownOpen = false, grandBreakdownOpen = false;
 
@@ -866,18 +866,10 @@ function setMemberFilter(f, el) { memberFilter=f; document.querySelectorAll('#pa
 function renderMembers() {
   const list = document.getElementById('memberList');
   const g = appData.groups.find(x=>x.id===activeGroupId); if(!g) { list.innerHTML=''; return; }
-  const rawS = document.getElementById('memberSearch').value.trim();
+  const s = document.getElementById('memberSearch').value.toLowerCase();
   const mk = currentMonthKey();
 
-  let ms = appData.members.filter(m => {
-    if (m.groupId !== activeGroupId) return false;
-    if (!rawS) return true;
-    const sLower = rawS.toLowerCase();
-    const sDigits = rawS.replace(/\D/g, '');
-    const nameMatch = m.name.toLowerCase().includes(sLower);
-    const phoneMatch = sDigits.length > 0 && (m.phone||'').replace(/\D/g,'').includes(sDigits);
-    return nameMatch || phoneMatch;
-  });
+  let ms = appData.members.filter(m=>m.groupId===activeGroupId && (m.name.toLowerCase().includes(s) || (m.phone||'').replace(/\D/g,'').includes(s.replace(/\D/g,''))));
   if(memberFilter==='paid') ms = ms.filter(m=>getPaidMonths(m.id).includes(mk));
   if(memberFilter==='unpaid') ms = ms.filter(m=>!getPaidMonths(m.id).includes(mk));
 
@@ -913,42 +905,34 @@ function openMemberDetail(id) {
     <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট বাকি</div></div>
   </div>`;
 
-  if(surplus>0) html+=`<div style="background:#fef3c7;border-radius:10px;padding:12px;text-align:center;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#92400e;">₹${surplus}</div><div style="font-size:10px;color:#92400e;">অতিরিক্ত জমা</div></div>`;
-
   if(canEditThisGroup && adminCanDo('payment')) {
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-      <button class="btn-primary" onclick="openPayment('${m.id}')">💳 Payment</button>
-      <button class="btn-primary" style="background:linear-gradient(135deg,var(--blue),var(--blue-dark));box-shadow:none;" onclick="openEditMemberModal('${m.id}')">✏️ Edit</button>
-      <button class="btn-primary" style="background:#fee2e2;color:var(--red);box-shadow:none;" onclick="requestDeleteMember('${m.id}')">🗑 Delete</button>
-    </div>`;
-  } else if(canEditThisGroup) {
     html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <button class="btn-primary" style="background:linear-gradient(135deg,var(--blue),var(--blue-dark));box-shadow:none;" onclick="openEditMemberModal('${m.id}')">✏️ Edit Info</button>
+      <button class="btn-primary" onclick="openPayment('${m.id}')">💳 Payment</button>
       <button class="btn-primary" style="background:#fee2e2;color:var(--red);box-shadow:none;" onclick="requestDeleteMember('${m.id}')">🗑 Delete</button>
     </div>`;
   }
 
   if(unp.length>0) html+=`<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ বকেয়া মাসগুলো:</div><div class="month-chips">${unp.map(k=>`<span class="badge badge-unpaid">${monthLabel(k)}</span>`).join('')}</div>`;
 
-  // FIX NEW: Payment history with delete option
-  if(paidMs.length > 0) {
-    const canDeletePay = canEditThisGroup && (adminCanDo('payment') || currentRole==='owner');
-    html += `<div style="margin-top:14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--green-dark);margin-bottom:8px;">📜 Payment History (ক্লিক করে ভুল পেমেন্ট মুছুন):</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${paidMs.sort().map(mo => {
-          const p = appData.payments.find(x=>x.memberId===m.id && x.month===mo);
-          if(!p) return `<span class="badge badge-paid">${monthLabel(mo)}</span>`;
-          if(canDeletePay) {
-            return `<span style="display:inline-flex;align-items:center;gap:4px;background:#d1fae5;color:#065f46;border-radius:20px;padding:3px 8px 3px 10px;font-size:11px;font-weight:600;">
-              ${monthLabel(mo)}
-              <button onclick="deletePayment('${p.id}','${m.id}')" style="background:#ef4444;color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;">✕</button>
-            </span>`;
-          }
-          return `<span class="badge badge-paid">${monthLabel(mo)}</span>`;
-        }).join('')}
+  // Payment history edit section (FIX: batch delete + surplus edit)
+  const sortedPaid = [...paidMs].sort();
+  editingPayMemberId = id;
+  payEditDeletedMonths = new Set();
+  if(sortedPaid.length > 0 || surplus > 0) {
+    html += `<div style="margin-top:14px;border-top:2px solid #f0f0f0;padding-top:14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:6px;">📜 Payment সম্পাদনা</div>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">মাসের উপর চাপলে লাল হবে — সব পরিবর্তনের পর একবার সংরক্ষণ করুন</div>
+      <div id="payHistoryChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+        ${sortedPaid.map(k=>`<div id="pchip-${k}" onclick="toggleDeleteMonth('${k}')" style="display:flex;align-items:center;gap:4px;background:#d1fae5;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:#065f46;cursor:pointer;touch-action:manipulation;transition:all 0.2s;">
+          <span style="pointer-events:none;">${monthLabel(k)}</span><span style="font-size:12px;color:#c0392b;margin-left:2px;pointer-events:none;">✕</span>
+        </div>`).join('')}
       </div>
-    </div>`
+      <div style="display:flex;align-items:center;gap:10px;background:#fef3c7;padding:10px 14px;border-radius:10px;margin-bottom:12px;">
+        <span style="font-size:12px;font-weight:700;color:#92400e;">💰 অতিরিক্ত জমা: ₹</span>
+        <input type="number" id="editSurplus" value="${surplus}" min="0" style="width:80px;padding:6px 10px;border:2px solid #d97706;border-radius:8px;font-size:14px;font-weight:700;color:#92400e;background:white;font-family:var(--font);">
+      </div>
+      <button onclick="savePaymentEdits('${id}')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--green),var(--green-light));color:white;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(26,107,58,0.35);touch-action:manipulation;">💾 পরিবর্তন সংরক্ষণ করুন</button>
+    </div>`;
   }
 
   document.getElementById('memberListView').style.display='none';
@@ -957,6 +941,46 @@ function openMemberDetail(id) {
 }
 
 function backToMembers() { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; }
+
+function toggleDeleteMonth(k) {
+  const chip = document.getElementById('pchip-' + k);
+  if(!chip) return;
+  if(payEditDeletedMonths.has(k)) {
+    payEditDeletedMonths.delete(k);
+    chip.style.background = '#d1fae5';
+    chip.style.color = '#065f46';
+    chip.style.textDecoration = 'none';
+    chip.style.opacity = '1';
+  } else {
+    payEditDeletedMonths.add(k);
+    chip.style.background = '#fee2e2';
+    chip.style.color = '#991b1b';
+    chip.style.textDecoration = 'line-through';
+    chip.style.opacity = '0.6';
+  }
+}
+
+function savePaymentEdits(memberId) {
+  const m = appData.members.find(x=>x.id===memberId); if(!m) return;
+  const newSurplus = parseInt(document.getElementById('editSurplus').value)||0;
+  const noChange = payEditDeletedMonths.size === 0 && newSurplus === (m.surplusBalance||0);
+  if(noChange) { showToast('কোনো পরিবর্তন নেই!'); return; }
+
+  if(payEditDeletedMonths.size > 0) {
+    appData.payments = appData.payments.filter(p => !(p.memberId===memberId && payEditDeletedMonths.has(p.month)));
+    addLog('✏️', `${m.name}-এর ${payEditDeletedMonths.size}টি payment সংশোধন করা হয়েছে`);
+  }
+  if(newSurplus !== (m.surplusBalance||0)) {
+    addLog('✏️', `${m.name}-এর অতিরিক্ত জমা ₹${m.surplusBalance||0} → ₹${newSurplus} পরিবর্তন হয়েছে`);
+  }
+  m.surplusBalance = newSurplus;
+  payEditDeletedMonths = new Set();
+
+  showToast('✅ Payment আপডেট হয়েছে!');
+  openMemberDetail(memberId);
+  updateDashboard();
+  saveToBackend();
+}
 
 // FIX #5: Admin requests delete, owner approves
 function requestDeleteMember(id) {
@@ -986,24 +1010,8 @@ function requestDeleteMember(id) {
   }
 }
 
-function openEditMemberModal(id) {
-  const m = appData.members.find(x=>x.id===id); if(!m) return;
-  document.getElementById('editingMemberId').value = id;
-  document.getElementById('memberModalTitle').textContent = 'তথ্য সম্পাদনা করুন';
-  document.getElementById('mName').value = m.name;
-  document.getElementById('mPhone').value = m.phone||'';
-  // Hide group & startMonth in edit mode
-  document.getElementById('memberGroupRow').style.display = 'none';
-  document.getElementById('memberStartMonthRow').style.display = 'none';
-  openModal('memberModal');
-}
-
 function openAddMemberModal() {
   if(!adminCanDo('addMember') && currentRole!=='owner') { showToast('এই permission নেই'); return; }
-  document.getElementById('editingMemberId').value = '';
-  document.getElementById('memberModalTitle').textContent = 'নতুন সদস্য';
-  document.getElementById('memberGroupRow').style.display = 'block';
-  document.getElementById('memberStartMonthRow').style.display = 'block';
   document.getElementById('mName').value=''; document.getElementById('mPhone').value='';
   // Filter groups for admin
   let groups = appData.groups;
@@ -1021,27 +1029,9 @@ function openAddMemberModal() {
 function saveMember() {
   const name=document.getElementById('mName').value.trim();
   const phone=document.getElementById('mPhone').value.trim();
-  const editId=document.getElementById('editingMemberId').value;
-
-  if(!name) { showToast('নাম দিন!'); return; }
-
-  if(editId) {
-    // Edit mode — only name and phone update
-    const m = appData.members.find(x=>x.id===editId);
-    if(!m) { showToast('সদস্য পাওয়া যায়নি!'); return; }
-    m.name = name; m.phone = phone;
-    addLog('✏️',`${name}-এর তথ্য সম্পাদনা করা হয়েছে`);
-    closeModal('memberModal');
-    openMemberDetail(editId);
-    renderMembers();
-    showToast('✅ তথ্য আপডেট হয়েছে!');
-    saveToBackend();
-    return;
-  }
-
-  // Add mode
   const groupId=document.getElementById('mGroup').value;
   const startMonth=document.getElementById('mStartMonth').value; // FIX #6
+  if(!name) { showToast('নাম দিন!'); return; }
   appData.members.push({ id:'m'+Date.now(), name, phone, groupId, startMonth, surplusBalance:0 });
   addLog('➕',`${name} যোগ হয়েছেন (${monthLabel(startMonth)} থেকে)`);
   closeModal('memberModal');
@@ -1290,20 +1280,6 @@ function rejectDeleteRequest(reqId) {
   saveToBackend();
 }
 
-// FIX NEW: Delete a specific payment entry
-function deletePayment(paymentId, memberId) {
-  const p = appData.payments.find(x=>x.id===paymentId); if(!p) return;
-  const m = appData.members.find(x=>x.id===memberId); if(!m) return;
-  const mn = monthLabel(p.month);
-  if(!confirm(`"${m.name}"-এর ${mn} মাসের পেমেন্ট মুছে ফেলবেন?`)) return;
-  appData.payments = appData.payments.filter(x=>x.id!==paymentId);
-  addLog('🗑',`${m.name}-এর ${mn} মাসের পেমেন্ট বাতিল করা হয়েছে`);
-  openMemberDetail(memberId);
-  updateDashboard();
-  showToast('✅ পেমেন্ট বাতিল হয়েছে!');
-  saveToBackend();
-}
-
 // ===== SMART PAYMENT =====
 function openPayment(id) {
   if(!adminCanDo('payment') && currentRole!=='owner') { showToast('Payment permission নেই'); return; }
@@ -1470,9 +1446,9 @@ function renderMonthlyChart() {
   document.getElementById('rptMonthlyChart').innerHTML = data.map(d=>`<div class="bar-row"><div class="bar-label">${d.l}</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(d.c/mx*100)}%"></div></div><div style="font-size:11px;font-weight:700;color:var(--green-dark);width:50px;text-align:right;">₹${d.c}</div></div>`).join('');
 }
 
-// FIX #1: Export — Excel downloads CSV, Google Sheet opens Google Sheets import page
+// FIX: Export — Excel downloads CSV, Google Sheet creates real Sheet via GAS
 function openExportModal() { openModal('exportModal'); }
-function doExport(type) {
+async function doExport(type) {
   closeModal('exportModal');
   const f=document.getElementById('expFrom').value, t=document.getElementById('expTo').value;
   const ms = getAllMonths().filter(m=>m>=f&&m<=t);
@@ -1488,22 +1464,32 @@ function doExport(type) {
   });
 
   if(type==='excel') {
-    // Pure Excel CSV download
     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='HTI_Data_Export.csv'; a.click();
     URL.revokeObjectURL(url);
     showToast('✅ Excel (CSV) ডাউনলোড হয়েছে!');
   } else {
-    // Google Sheet: first download CSV, then open Sheets
-    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='HTI_Data_Export.csv'; a.click();
-    URL.revokeObjectURL(url);
-    setTimeout(()=>{
-      window.open('https://docs.google.com/spreadsheets/create','_blank');
-      showToast('CSV ডাউনলোড হয়েছে। Sheets-এ Import করুন।');
-    }, 800);
+    // Google Sheet: send data to GAS, get real Sheet URL back
+    showLoading();
+    try {
+      const r = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ apiKey: API_KEY, action: 'createSheet', csvData: csv })
+      });
+      const d = await r.json();
+      hideLoading();
+      if(d.success && d.url) {
+        window.open(d.url, '_blank');
+        showToast('✅ Google Sheet তৈরি হয়েছে!');
+      } else {
+        showToast('⚠️ Sheet তৈরি হয়নি: ' + (d.message||''));
+      }
+    } catch(e) {
+      hideLoading();
+      showToast('⚠️ Error হয়েছে, আবার চেষ্টা করুন।');
+    }
   }
 }
 
