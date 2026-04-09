@@ -900,16 +900,19 @@ function openMemberDetail(id) {
     <div style="flex:1;"><div style="font-size:18px;font-weight:700;">${m.name}</div><div style="font-size:12px;color:var(--gray);">${g.name} • ${m.phone||'নম্বর নেই'}</div></div>
   </div>`;
 
-  html += `<div class="detail-stats">
-    <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--green-dark);">₹${paidMs.filter(k=>k<=currentMonthKey()).length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট দিয়েছেন</div></div>
-    <div class="detail-stat"><div style="font-size:18px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট বাকি</div></div>
+  const totalPaidAmt = paidMs.length * g.amount + surplus;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+    <div class="detail-stat"><div style="font-size:15px;font-weight:700;color:var(--green-dark);">₹${totalPaidAmt}</div><div style="font-size:10px;color:var(--gray);">মোট দিয়েছেন</div></div>
+    <div class="detail-stat"><div style="font-size:15px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট বাকি</div></div>
+    <div class="detail-stat"><div style="font-size:15px;font-weight:700;color:var(--blue);">${paidMs.length} মাস</div><div style="font-size:10px;color:var(--gray);">মোট মাস জমা</div></div>
   </div>`;
 
   if(canEditThisGroup && adminCanDo('payment')) {
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <button class="btn-primary" onclick="openPayment('${m.id}')">💳 Payment</button>
       <button class="btn-primary" style="background:#fee2e2;color:var(--red);box-shadow:none;" onclick="requestDeleteMember('${m.id}')">🗑 Delete</button>
-    </div>`;
+    </div>
+    <button onclick="togglePayEditSection()" style="width:100%;padding:11px;background:#dbeafe;color:var(--blue-dark);border:2px solid #bfdbfe;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:16px;touch-action:manipulation;">✏️ Payment Edit</button>`;
   }
 
   if(unp.length>0) html+=`<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ বকেয়া মাসগুলো:</div><div class="month-chips">${unp.map(k=>`<span class="badge badge-unpaid">${monthLabel(k)}</span>`).join('')}</div>`;
@@ -919,7 +922,7 @@ function openMemberDetail(id) {
   editingPayMemberId = id;
   payEditDeletedMonths = new Set();
   if(sortedPaid.length > 0 || surplus > 0) {
-    html += `<div style="margin-top:14px;border-top:2px solid #f0f0f0;padding-top:14px;">
+    html += `<div id="payEditSection" style="display:none;border-top:2px solid #f0f0f0;padding-top:14px;">
       <div style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:6px;">📜 Payment সম্পাদনা</div>
       <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">মাসের উপর চাপলে লাল হবে — সব পরিবর্তনের পর একবার সংরক্ষণ করুন</div>
       <div id="payHistoryChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
@@ -960,6 +963,13 @@ function toggleDeleteMonth(k) {
   }
 }
 
+function togglePayEditSection() {
+  const sec = document.getElementById('payEditSection');
+  if(!sec) return;
+  const isHidden = sec.style.display === 'none';
+  sec.style.display = isHidden ? 'block' : 'none';
+}
+
 function savePaymentEdits(memberId) {
   const m = appData.members.find(x=>x.id===memberId); if(!m) return;
   const newSurplus = parseInt(document.getElementById('editSurplus').value)||0;
@@ -974,9 +984,49 @@ function savePaymentEdits(memberId) {
     addLog('✏️', `${m.name}-এর অতিরিক্ত জমা ₹${m.surplusBalance||0} → ₹${newSurplus} পরিবর্তন হয়েছে`);
   }
   m.surplusBalance = newSurplus;
-  payEditDeletedMonths = new Set();
 
-  showToast('✅ Payment আপডেট হয়েছে!');
+  // Auto-convert surplus to months if >= group amount
+  const g2 = appData.groups.find(x => x.id === m.groupId);
+  let surplus2 = newSurplus;
+  const autoAdded = [];
+  if(g2) {
+    while(surplus2 >= g2.amount) {
+      const unp2 = getUnpaidMonths(m).sort();
+      if(unp2.length > 0) {
+        // প্রথমে বকেয়া মাস পরিশোধ
+        const mo = unp2[0];
+        appData.payments.push({ id:'p'+Date.now()+Math.random(), memberId:m.id, month:mo, amount:g2.amount, date:new Date().toISOString() });
+        autoAdded.push(mo);
+        surplus2 -= g2.amount;
+      } else {
+        // তারপর অগ্রিম মাস
+        let added = false;
+        const allPaidNow = getPaidMonths(m.id);
+        for(let i=1; i<=24; i++) {
+          let advM = CM+i, advY = CY;
+          while(advM > 11){ advM -= 12; advY++; }
+          const k = monthKey(advY, advM);
+          if(!allPaidNow.includes(k)) {
+            appData.payments.push({ id:'p'+Date.now()+Math.random(), memberId:m.id, month:k, amount:g2.amount, date:new Date().toISOString() });
+            autoAdded.push(k);
+            surplus2 -= g2.amount;
+            added = true;
+            break;
+          }
+        }
+        if(!added) break;
+      }
+    }
+  }
+  m.surplusBalance = surplus2;
+  if(autoAdded.length > 0) {
+    addLog('💰', `${m.name}-এর উদ্বৃত্ত থেকে স্বয়ংক্রিয়ভাবে ${autoAdded.map(k=>monthLabel(k)).join(', ')} জমা হয়েছে`);
+    showToast(`✅ উদ্বৃত্ত থেকে ${autoAdded.length}টি মাস স্বয়ংক্রিয়ভাবে জমা হয়েছে!`);
+  } else {
+    showToast('✅ Payment আপডেট হয়েছে!');
+  }
+
+  payEditDeletedMonths = new Set();
   openMemberDetail(memberId);
   updateDashboard();
   saveToBackend();
