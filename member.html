@@ -580,19 +580,16 @@ async function doLogin() {
     const res = await fetch(url);
     const data = await res.json();
 
-    // DEBUG: data structure check
-    const keys = Object.keys(data);
-    const memberCount = (data.members || data.data?.members || []).length;
-    const actualMembers = data.members || data.data?.members || [];
-    const storedPhones = actualMembers.slice(0,3).map(m => m.phone || 'no-phone');
+    // GAS returns { success: true, data: { members, payments, ... } }
+    const appData = data.data || data;
 
-    const member = actualMembers.find(m => normalizePhone(m.phone || '') === phone);
+    const member = (appData.members || []).find(m => normalizePhone(m.phone || '') === phone);
     if (!member) {
       showLoading(false);
-      showError(`DEBUG → keys: [${keys.join(',')}] | members: ${memberCount} | phones: ${storedPhones.join(' / ')} | input: ${phone}`);
+      showError('এই নম্বরে কোনো সদস্য পাওয়া যায়নি। সঠিক নম্বর দিন।');
       return;
     }
-    renderDashboard(member, data);
+    renderDashboard(member, appData);
   } catch (e) {
     showLoading(false);
     showError('সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
