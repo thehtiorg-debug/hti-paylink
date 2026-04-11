@@ -504,6 +504,18 @@
       <span class="surplus-val" id="dSurplus">₹0</span>
     </div>
 
+    <!-- Nickname Edit Box (Fix 4) -->
+    <div id="nickEditBox" style="display:none;" class="section-card fadein-3">
+      <div class="section-title">✏️ আপনার প্রদর্শনের নাম পরিবর্তন করুন</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;">শুধু আপনার পোর্টালে এই নামটি দেখাবে। Owner ও Admin-এর কাছে আগের নামই থাকবে।</p>
+      <input type="text" id="nickInput" placeholder="আপনার পছন্দের নাম লিখুন..."
+        style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;color:var(--white);font-family:'Noto Sans Bengali',sans-serif;font-size:14px;outline:none;margin-bottom:10px;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="saveNickname()" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--green-main),var(--green-light));color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans Bengali',sans-serif;touch-action:manipulation;">💾 সংরক্ষণ</button>
+        <button onclick="clearNickname()" style="flex:1;padding:11px;background:rgba(255,255,255,0.07);color:var(--muted);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans Bengali',sans-serif;touch-action:manipulation;">🗑 মুছুন</button>
+      </div>
+    </div>
+
     <!-- Paid months -->
     <div class="section-card fadein-3">
       <div class="section-title">✅ পরিশোধিত মাস</div>
@@ -530,6 +542,8 @@
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzHEPNibxKvpmbbsNMgF4CgTdZHWO1oza8kjvDx30wcS4-3hhquRXKF7XCLR6G5MGl_/exec";
 const API_KEY = "HTISecure2025";
 
+let currentMemberPhone = ''; // Fix 4: store for nickname key
+
 const BN_MONTHS = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
 
 function toBn(n) {
@@ -545,7 +559,7 @@ function normalizePhone(p) {
 
 function monthLabel(key) {
   const [y, m] = key.split('-');
-  return BN_MONTHS[parseInt(m) - 1] + ' ' + toBn(y);
+  return BN_MONTHS[parseInt(m) - 1] + ' ' + y;
 }
 
 function currentMonthKey() {
@@ -593,6 +607,7 @@ async function doLogin() {
       showError('এই নম্বরে কোনো সদস্য পাওয়া যায়নি। সঠিক নম্বর দিন।');
       return;
     }
+    currentMemberPhone = phone; // Fix 4
     renderDashboard(member, appData);
   } catch (e) {
     showLoading(false);
@@ -602,10 +617,6 @@ async function doLogin() {
 
 function renderDashboard(member, data) {
   const group = (data.groups || []).find(g => g.id === member.groupId) || {};
-  // DEBUG
-  const groupIds = (data.groups||[]).map(g=>g.id).join(', ');
-  console.log('member.groupId:', member.groupId, '| available:', groupIds);
-  document.title = `DEBUG groupId:${member.groupId} | groups:${groupIds}`;
   const payments = data.payments || [];
   const paid = payments.filter(p => p.memberId === member.id).map(p => p.month).sort();
   const unpaid = getUnpaidMonths(member, payments);
@@ -615,18 +626,24 @@ function renderDashboard(member, data) {
   const totalPaid = paid.length * amount + surplus;
   const totalDue = unpaid.length * amount;
 
-  document.getElementById('dName').textContent = member.name;
-  document.getElementById('dGroup').textContent = (group.name || '') + ' · ₹' + toBn(amount) + '/মাস';
+  // Check for stored nickname (Fix 4)
+  const normPhone = normalizePhone(member.phone || '');
+  const storedNick = localStorage.getItem('hti_nick_' + normPhone);
+  document.getElementById('dName').innerHTML =
+    (storedNick || member.name) +
+    ' <button onclick="openNickEdit()" style="background:none;border:none;cursor:pointer;font-size:16px;vertical-align:middle;opacity:0.7;touch-action:manipulation;" title="নাম পরিবর্তন করুন">✏️</button>';
+
+  document.getElementById('dGroup').textContent = (group.name || '') + ' · ₹' + amount + '/মাস';
   document.getElementById('dPhone').textContent = member.phone;
-  document.getElementById('dPaidMonths').textContent = toBn(paid.length) + ' মাস';
-  document.getElementById('dDueMonths').textContent = toBn(unpaid.length) + ' মাস';
-  document.getElementById('dTotalPaid').textContent = '₹' + toBn(totalPaid.toLocaleString('en-IN'));
-  document.getElementById('dTotalDue').textContent = '₹' + toBn(totalDue.toLocaleString('en-IN'));
+  document.getElementById('dPaidMonths').textContent = paid.length + ' মাস';
+  document.getElementById('dDueMonths').textContent = unpaid.length + ' মাস';
+  document.getElementById('dTotalPaid').textContent = '₹' + totalPaid.toLocaleString('en-IN');
+  document.getElementById('dTotalDue').textContent = '₹' + totalDue.toLocaleString('en-IN');
 
   // Surplus
   if (surplus > 0) {
     document.getElementById('surplusBox').style.display = 'flex';
-    document.getElementById('dSurplus').textContent = '₹' + toBn(surplus);
+    document.getElementById('dSurplus').textContent = '₹' + surplus;
   }
 
   // Paid chips
@@ -648,6 +665,47 @@ function renderDashboard(member, data) {
   showLoading(false);
   document.getElementById('loginSection').style.display = 'none';
   document.getElementById('dashboardSection').style.display = 'block';
+}
+
+// Fix 4: Nickname functions
+function openNickEdit() {
+  const box = document.getElementById('nickEditBox');
+  if(!box) return;
+  const stored = localStorage.getItem('hti_nick_' + currentMemberPhone) || '';
+  document.getElementById('nickInput').value = stored;
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if(box.style.display === 'block') {
+    setTimeout(() => document.getElementById('nickInput').focus(), 100);
+  }
+}
+
+function saveNickname() {
+  const nick = document.getElementById('nickInput').value.trim();
+  if(!nick) { clearNickname(); return; }
+  localStorage.setItem('hti_nick_' + currentMemberPhone, nick);
+  document.getElementById('nickEditBox').style.display = 'none';
+  // Update displayed name
+  document.getElementById('dName').innerHTML =
+    nick + ' <button onclick="openNickEdit()" style="background:none;border:none;cursor:pointer;font-size:16px;vertical-align:middle;opacity:0.7;touch-action:manipulation;">✏️</button>';
+  showSuccessMsg('✅ নাম পরিবর্তন হয়েছে!');
+}
+
+function clearNickname() {
+  localStorage.removeItem('hti_nick_' + currentMemberPhone);
+  document.getElementById('nickEditBox').style.display = 'none';
+  // Restore original name — re-fetch from dashboard data won't work here
+  // so we just reload
+  window.location.reload();
+}
+
+function showSuccessMsg(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = 'rgba(34,197,94,0.15)';
+  el.style.borderColor = 'rgba(34,197,94,0.3)';
+  el.style.color = '#4ade80';
+  setTimeout(() => { el.style.display = 'none'; el.style.background=''; el.style.borderColor=''; el.style.color=''; }, 3000);
 }
 
 function doLogout() {

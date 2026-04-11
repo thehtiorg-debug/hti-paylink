@@ -484,6 +484,9 @@ let activeGroupId = null, memberFilter = 'all';
 let payingMemberId = null, smartResult = null;
 let payEditDeletedMonths = new Set();
 let editingPayMemberId = null;
+let currentViewingMemberId = null;
+let pollingInterval = null;
+let lastSyncHash = '';
 let selectedGroupColor = '#2563eb';
 let monthlyBreakdownOpen = false, grandBreakdownOpen = false;
 
@@ -676,6 +679,7 @@ async function startApp() {
 
   initSelects();
   updateDashboard(); renderGroupPills(); renderMembers(); renderWA();
+  startPolling(); // FIX #3: Real-time auto sync
 }
 
 function showPage(p, el) {
@@ -895,6 +899,7 @@ function renderMembers() {
 
 // ===== MEMBER DETAIL =====
 function openMemberDetail(id) {
+  currentViewingMemberId = id;
   const m = appData.members.find(x=>x.id===id); if(!m) return;
   const g = appData.groups.find(x=>x.id===m.groupId);
   const unp = getUnpaidMonths(m);
@@ -913,6 +918,17 @@ function openMemberDetail(id) {
     <div class="detail-stat"><div style="font-size:15px;font-weight:700;color:var(--red);">₹${unp.length*g.amount}</div><div style="font-size:10px;color:var(--gray);">মোট বাকি</div></div>
     <div class="detail-stat"><div style="font-size:15px;font-weight:700;color:var(--blue);">${paidMs.length} মাস</div><div style="font-size:10px;color:var(--gray);">মোট মাস জমা</div></div>
   </div>`;
+
+  // FIX #2: Member info edit button (owner & admin with group access)
+  if(canEditThisGroup) {
+    html += `<button onclick="toggleMemberEditSection()" style="width:100%;padding:10px;background:#f0fdf4;color:var(--green-dark);border:2px solid #86efac;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:10px;touch-action:manipulation;">✏️ তথ্য সম্পাদনা (নাম / নম্বর / Group)</button>
+    <div id="memberInfoEditSection" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div class="form-group"><label class="form-label">নাম</label><input type="text" class="form-input" id="editMName" value="${m.name}" style="margin-top:4px;"></div>
+      <div style="margin-top:10px;" class="form-group"><label class="form-label">WhatsApp নম্বর</label><input type="tel" class="form-input" id="editMPhone" value="${m.phone||''}" style="margin-top:4px;"></div>
+      <div style="margin-top:10px;" class="form-group"><label class="form-label">Group</label><select class="form-select" id="editMGroup" style="margin-top:4px;">${appData.groups.map(g2=>`<option value="${g2.id}" ${g2.id===m.groupId?'selected':''}>${g2.name}</option>`).join('')}</select></div>
+      <button onclick="saveEditMemberInfo('${id}')" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--green),var(--green-light));color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);margin-top:12px;touch-action:manipulation;">💾 পরিবর্তন সংরক্ষণ করুন</button>
+    </div>`;
+  }
 
   if(canEditThisGroup && adminCanDo('payment')) {
     html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -950,7 +966,7 @@ function openMemberDetail(id) {
   document.getElementById('memberDetailView').style.display='block';
 }
 
-function backToMembers() { document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; }
+function backToMembers() { currentViewingMemberId = null; document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; }
 
 function toggleDeleteMonth(k) {
   const chip = document.getElementById('pchip-' + k);
@@ -975,6 +991,39 @@ function togglePayEditSection() {
   if(!sec) return;
   const isHidden = sec.style.display === 'none';
   sec.style.display = isHidden ? 'block' : 'none';
+}
+
+// FIX #2: Member info edit functions
+function toggleMemberEditSection() {
+  const sec = document.getElementById('memberInfoEditSection');
+  if(!sec) return;
+  sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveEditMemberInfo(id) {
+  const m = appData.members.find(x=>x.id===id); if(!m) return;
+  const newName = document.getElementById('editMName').value.trim();
+  const newPhone = document.getElementById('editMPhone').value.trim();
+  const newGroup = document.getElementById('editMGroup').value;
+  if(!newName) { showToast('নাম দিন!'); return; }
+
+  const changes = [];
+  if(newName !== m.name) changes.push(`নাম: ${m.name} → ${newName}`);
+  if(newPhone !== (m.phone||'')) changes.push('নম্বর পরিবর্তন');
+  if(newGroup !== m.groupId) {
+    const oldG = appData.groups.find(x=>x.id===m.groupId);
+    const newG = appData.groups.find(x=>x.id===newGroup);
+    changes.push(`Group: ${(oldG&&oldG.name)||''} → ${(newG&&newG.name)||''}`);
+  }
+  if(changes.length === 0) { showToast('কোনো পরিবর্তন নেই!'); return; }
+
+  m.name = newName; m.phone = newPhone; m.groupId = newGroup;
+  addLog('✏️', `${newName}-এর তথ্য আপডেট: ${changes.join(', ')}`);
+  showToast('✅ তথ্য আপডেট হয়েছে!');
+  activeGroupId = newGroup;
+  openMemberDetail(id);
+  renderGroupPills(); renderMembers(); updateDashboard();
+  saveToBackend();
 }
 
 function savePaymentEdits(memberId) {
@@ -1548,6 +1597,73 @@ async function doExport(type) {
       showToast('⚠️ Error হয়েছে, আবার চেষ্টা করুন।');
     }
   }
+}
+
+// ===== FIX #3: REAL-TIME AUTO SYNC (POLLING) =====
+function startPolling() {
+  if(pollingInterval) clearInterval(pollingInterval);
+  lastSyncHash = JSON.stringify(appData);
+  pollingInterval = setInterval(silentSync, 30000); // every 30 seconds
+}
+
+async function silentSync() {
+  try {
+    const r = await fetch(SCRIPT_URL + '?apiKey=' + API_KEY + '&action=getData&_t=' + Date.now());
+    const d = await r.json();
+    if(!d.success) return;
+    const newHash = JSON.stringify(d.data);
+    if(newHash === lastSyncHash) return; // কোনো পরিবর্তন নেই
+
+    // Data পরিবর্তন হয়েছে!
+    appData = d.data;
+    if(!appData.members) appData.members=[];
+    if(!appData.payments) appData.payments=[];
+    if(!appData.groups) appData.groups=[{id:'g1',name:'HTI SPECIAL',amount:100,color:'#1a6b3a'}];
+    if(!appData.activityLog) appData.activityLog=[];
+    if(!appData.deleteRequests) appData.deleteRequests=[];
+
+    // Admin-এর permission re-validate
+    if(currentRole==='admin') {
+      const freshAdmin = appData.admins.find(x=>x.email===currentUser.email && !x.suspended);
+      if(!freshAdmin) {
+        clearInterval(pollingInterval);
+        showToast('⚠️ Admin access বাতিল হয়েছে।');
+        logout(); return;
+      }
+      currentAdminData = freshAdmin;
+      localStorage.setItem('htiUser', JSON.stringify({user:currentUser, role:currentRole, adminData:freshAdmin}));
+    }
+
+    lastSyncHash = newHash;
+    silentRefreshUI();
+    showToast('🔄 নতুন আপডেট পাওয়া গেছে!');
+  } catch(e) {
+    // Background sync fail — চুপচাপ থাকো, user-কে বিরক্ত করো না
+  }
+}
+
+function silentRefreshUI() {
+  const pages = ['dashboard','members','whatsapp','report','admin','log'];
+  let activePage = null;
+  pages.forEach(p => {
+    const el = document.getElementById('page-'+p);
+    if(el && el.classList.contains('active')) activePage = p;
+  });
+
+  if(activePage === 'dashboard') { updateDashboard(); }
+  if(activePage === 'members') {
+    renderGroupPills();
+    const detailVisible = document.getElementById('memberDetailView').style.display !== 'none';
+    if(currentViewingMemberId && detailVisible) {
+      openMemberDetail(currentViewingMemberId);
+    } else {
+      renderMembers();
+    }
+  }
+  if(activePage === 'whatsapp') renderWA();
+  if(activePage === 'report') renderReport();
+  if(activePage === 'admin') renderAdminPanel();
+  if(activePage === 'log') renderLog();
 }
 
 // ===== LOG =====
