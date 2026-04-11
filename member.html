@@ -532,6 +532,10 @@ const API_KEY = "HTISecure2025";
 
 const BN_MONTHS = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
 
+function toBn(n) {
+  return String(n).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+}
+
 function normalizePhone(p) {
   p = p.replace(/\D/g, '');
   // শেষের ১০ digit নাও — যে format-ই হোক (91, 880, +91, 0 prefix)
@@ -541,7 +545,7 @@ function normalizePhone(p) {
 
 function monthLabel(key) {
   const [y, m] = key.split('-');
-  return BN_MONTHS[parseInt(m) - 1] + ' ' + y;
+  return BN_MONTHS[parseInt(m) - 1] + ' ' + toBn(y);
 }
 
 function currentMonthKey() {
@@ -612,17 +616,17 @@ function renderDashboard(member, data) {
   const totalDue = unpaid.length * amount;
 
   document.getElementById('dName').textContent = member.name;
-  document.getElementById('dGroup').textContent = (group.name || '') + ' · ₹' + amount + '/মাস';
+  document.getElementById('dGroup').textContent = (group.name || '') + ' · ₹' + toBn(amount) + '/মাস';
   document.getElementById('dPhone').textContent = member.phone;
-  document.getElementById('dPaidMonths').textContent = paid.length + ' মাস';
-  document.getElementById('dDueMonths').textContent = unpaid.length + ' মাস';
-  document.getElementById('dTotalPaid').textContent = '₹' + totalPaid.toLocaleString('bn-BD');
-  document.getElementById('dTotalDue').textContent = '₹' + totalDue.toLocaleString('bn-BD');
+  document.getElementById('dPaidMonths').textContent = toBn(paid.length) + ' মাস';
+  document.getElementById('dDueMonths').textContent = toBn(unpaid.length) + ' মাস';
+  document.getElementById('dTotalPaid').textContent = '₹' + toBn(totalPaid.toLocaleString('en-IN'));
+  document.getElementById('dTotalDue').textContent = '₹' + toBn(totalDue.toLocaleString('en-IN'));
 
   // Surplus
   if (surplus > 0) {
     document.getElementById('surplusBox').style.display = 'flex';
-    document.getElementById('dSurplus').textContent = '₹' + surplus;
+    document.getElementById('dSurplus').textContent = '₹' + toBn(surplus);
   }
 
   // Paid chips

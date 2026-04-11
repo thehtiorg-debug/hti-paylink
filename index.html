@@ -869,7 +869,14 @@ function renderMembers() {
   const s = document.getElementById('memberSearch').value.toLowerCase();
   const mk = currentMonthKey();
 
-  let ms = appData.members.filter(m=>m.groupId===activeGroupId && (m.name.toLowerCase().includes(s) || (m.phone||'').replace(/\D/g,'').includes(s.replace(/\D/g,''))));
+  let ms = appData.members.filter(m=>{
+    if(m.groupId!==activeGroupId) return false;
+    if(!s) return true;
+    const nameMatch = m.name.toLowerCase().includes(s);
+    const phoneDigits = s.replace(/\D/g,'');
+    const phoneMatch = phoneDigits.length > 0 && (m.phone||'').replace(/\D/g,'').includes(phoneDigits);
+    return nameMatch || phoneMatch;
+  });
   if(memberFilter==='paid') ms = ms.filter(m=>getPaidMonths(m.id).includes(mk));
   if(memberFilter==='unpaid') ms = ms.filter(m=>!getPaidMonths(m.id).includes(mk));
 
