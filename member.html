@@ -488,12 +488,12 @@
       </div>
       <div class="stat-card">
         <span class="stat-icon">💰</span>
-        <div class="stat-value gold" id="dTotalPaid">৳0</div>
+        <div class="stat-value gold" id="dTotalPaid">₹0</div>
         <div class="stat-label">মোট জমা দিয়েছেন</div>
       </div>
       <div class="stat-card">
         <span class="stat-icon">🔴</span>
-        <div class="stat-value red" id="dTotalDue">৳0</div>
+        <div class="stat-value red" id="dTotalDue">₹0</div>
         <div class="stat-label">মোট বাকি আছে</div>
       </div>
     </div>
@@ -501,7 +501,7 @@
     <!-- Surplus -->
     <div class="surplus-badge fadein-3" id="surplusBox" style="display:none;">
       <span class="surplus-label">⭐ উদ্বৃত্ত জমা (Surplus)</span>
-      <span class="surplus-val" id="dSurplus">৳0</span>
+      <span class="surplus-val" id="dSurplus">₹0</span>
     </div>
 
     <!-- Paid months -->
@@ -598,6 +598,10 @@ async function doLogin() {
 
 function renderDashboard(member, data) {
   const group = (data.groups || []).find(g => g.id === member.groupId) || {};
+  // DEBUG
+  const groupIds = (data.groups||[]).map(g=>g.id).join(', ');
+  console.log('member.groupId:', member.groupId, '| available:', groupIds);
+  document.title = `DEBUG groupId:${member.groupId} | groups:${groupIds}`;
   const payments = data.payments || [];
   const paid = payments.filter(p => p.memberId === member.id).map(p => p.month).sort();
   const unpaid = getUnpaidMonths(member, payments);
@@ -608,17 +612,17 @@ function renderDashboard(member, data) {
   const totalDue = unpaid.length * amount;
 
   document.getElementById('dName').textContent = member.name;
-  document.getElementById('dGroup').textContent = (group.name || '') + ' · ৳' + amount + '/মাস';
+  document.getElementById('dGroup').textContent = (group.name || '') + ' · ₹' + amount + '/মাস';
   document.getElementById('dPhone').textContent = member.phone;
   document.getElementById('dPaidMonths').textContent = paid.length + ' মাস';
   document.getElementById('dDueMonths').textContent = unpaid.length + ' মাস';
-  document.getElementById('dTotalPaid').textContent = '৳' + totalPaid.toLocaleString('bn-BD');
-  document.getElementById('dTotalDue').textContent = '৳' + totalDue.toLocaleString('bn-BD');
+  document.getElementById('dTotalPaid').textContent = '₹' + totalPaid.toLocaleString('bn-BD');
+  document.getElementById('dTotalDue').textContent = '₹' + totalDue.toLocaleString('bn-BD');
 
   // Surplus
   if (surplus > 0) {
     document.getElementById('surplusBox').style.display = 'flex';
-    document.getElementById('dSurplus').textContent = '৳' + surplus;
+    document.getElementById('dSurplus').textContent = '₹' + surplus;
   }
 
   // Paid chips
