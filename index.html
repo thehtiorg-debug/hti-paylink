@@ -286,6 +286,21 @@
 
     <!-- WHATSAPP -->
     <div class="page" id="page-whatsapp">
+      <!-- WhatsApp App Selector -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:10px;">📱 কোন WhatsApp ব্যবহার করেন?</div>
+        <div style="display:flex;gap:10px;">
+          <button id="waPrefBtn_whatsapp" onclick="saveWAPref('whatsapp')"
+            style="flex:1;padding:11px 8px;border-radius:10px;border:2px solid #e5e7eb;background:#f9fafb;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all 0.2s;">
+            🟢 WhatsApp
+          </button>
+          <button id="waPrefBtn_business" onclick="saveWAPref('business')"
+            style="flex:1;padding:11px 8px;border-radius:10px;border:2px solid #e5e7eb;background:#f9fafb;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all 0.2s;">
+            🟢 WA Business
+          </button>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:center;">একবার বেছে নিলে এই device-এ সবসময় মনে থাকবে।</div>
+      </div>
       <div class="card">
         <div class="card-title">💬 WhatsApp Reminder</div>
         <div class="form-group"><label class="form-label">Group বেছে নিন</label><select class="form-select" id="waGroup" onchange="updateWAPreview()"><option value="all">সবাইকে (সব Group)</option></select></div>
@@ -531,7 +546,7 @@ function adminCanEditGroup(groupId) {
 function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
 function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
-function openModal(id) { document.getElementById(id).classList.add('active'); }
+function openModal(id) { document.getElementById(id).classList.add('active'); history.pushState({htiApp: true, type: 'modal'}, ''); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 function selectColor(c, el) {
   selectedGroupColor = c;
@@ -679,6 +694,7 @@ async function startApp() {
 
   initSelects();
   updateDashboard(); renderGroupPills(); renderMembers(); renderWA();
+  history.replaceState({htiApp: true}, ''); // mobile back button support
   startPolling(); // FIX #3: Real-time auto sync
 }
 
@@ -964,6 +980,7 @@ function openMemberDetail(id) {
   document.getElementById('memberListView').style.display='none';
   document.getElementById('detailContent').innerHTML = html;
   document.getElementById('memberDetailView').style.display='block';
+  history.pushState({htiApp: true, type: 'memberDetail'}, '');
 }
 
 function backToMembers() { currentViewingMemberId = null; document.getElementById('memberListView').style.display='block'; document.getElementById('memberDetailView').style.display='none'; }
@@ -1462,11 +1479,44 @@ function sendReceipt(m, g, paidMs, advMs, inputAmt, surplus) {
 
   const phone = m.phone.replace(/\D/g,'').replace(/^0+/,'');
   const waPhone = phone.startsWith('91') ? phone : '91'+phone;
-  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  window.open(getWAUrl(waPhone, msg), '_blank');
+}
+
+// ===== WHATSAPP APP PREFERENCE =====
+function getWAUrl(phone, text) {
+  const pref = localStorage.getItem('htiWAPreference') || 'whatsapp';
+  const encodedText = encodeURIComponent(text);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if(isAndroid && pref === 'business') {
+    return `intent://send?phone=${phone}&text=${encodedText}#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end`;
+  } else if(isAndroid && pref === 'whatsapp') {
+    return `intent://send?phone=${phone}&text=${encodedText}#Intent;package=com.whatsapp;scheme=whatsapp;end`;
+  } else {
+    return `https://wa.me/${phone}?text=${encodedText}`;
+  }
+}
+function saveWAPref(val) {
+  localStorage.setItem('htiWAPreference', val);
+  loadWAPref();
+  showToast(val === 'business' ? '✅ WhatsApp Business সেট হয়েছে।' : '✅ WhatsApp সেট হয়েছে।');
+}
+function loadWAPref() {
+  const pref = localStorage.getItem('htiWAPreference') || 'whatsapp';
+  const btnWA = document.getElementById('waPrefBtn_whatsapp');
+  const btnBiz = document.getElementById('waPrefBtn_business');
+  if(!btnWA || !btnBiz) return;
+  if(pref === 'business') {
+    btnBiz.style.borderColor = 'var(--green)'; btnBiz.style.background = '#f0fdf4'; btnBiz.style.color = 'var(--green-dark)';
+    btnWA.style.borderColor = '#e5e7eb'; btnWA.style.background = '#f9fafb'; btnWA.style.color = '#1a1a1a';
+  } else {
+    btnWA.style.borderColor = 'var(--green)'; btnWA.style.background = '#f0fdf4'; btnWA.style.color = 'var(--green-dark)';
+    btnBiz.style.borderColor = '#e5e7eb'; btnBiz.style.background = '#f9fafb'; btnBiz.style.color = '#1a1a1a';
+  }
 }
 
 // ===== WHATSAPP REMINDER =====
 function renderWA() {
+  loadWAPref();
   document.getElementById('waGroup').innerHTML = '<option value="all">সবাইকে (সব Group)</option>' + appData.groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
   updateWAPreview();
 }
@@ -1506,7 +1556,7 @@ function sendReminder(mId) {
   else msg += `✅ কোনো বাকি নেই! আলহামদুলিল্লাহ।\n\n`;
   msg += `জাযাকাল্লাহু খায়রান 🌙\n— HTI PayLink`;
   const p = m.phone.replace(/\D/g,'').replace(/^0+/,'');
-  window.open(`https://wa.me/${p.startsWith('91')?p:'91'+p}?text=${encodeURIComponent(msg)}`,'_blank');
+  window.open(getWAUrl(p.startsWith('91')?p:'91'+p, msg),'_blank');
 }
 
 // ===== REPORT =====
@@ -1679,6 +1729,27 @@ function clearLog() {
   if(currentRole!=='owner') return;
   if(confirm('সব Log মুছবেন?')) { appData.activityLog=[]; renderLog(); showToast('🗑 Log মুছে গেছে।'); saveToBackend(); }
 }
+
+// ===== MOBILE BACK BUTTON / SWIPE =====
+window.addEventListener('popstate', function(e) {
+  // যদি কোনো modal খোলা থাকে — সেটা বন্ধ করো
+  const openModalEl = document.querySelector('.modal-overlay.active');
+  if(openModalEl) {
+    openModalEl.classList.remove('active');
+    return;
+  }
+  // যদি member detail খোলা থাকে — list-এ ফিরে যাও
+  const detailView = document.getElementById('memberDetailView');
+  if(detailView && detailView.style.display !== 'none') {
+    backToMembers();
+    history.pushState({htiApp: true}, '');
+    return;
+  }
+  // Main app-এ থাকলে exit হওয়া আটকাও
+  if(document.getElementById('main-app').classList.contains('active')) {
+    history.pushState({htiApp: true}, '');
+  }
+});
 </script>
 </body>
 </html>
