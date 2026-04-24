@@ -1744,6 +1744,27 @@ function clearLog() {
   if(confirm('সব Log মুছবেন?')) { appData.activityLog=[]; renderLog(); showToast('🗑 Log মুছে গেছে।'); saveToBackend(); }
 }
 
+// ===== MOBILE BUTTON TOUCH FIX =====
+(function() {
+  var touchStartedOnBtn = null;
+  document.addEventListener('touchstart', function(e) {
+    var btn = e.target.closest('button');
+    touchStartedOnBtn = btn || null;
+  }, {passive: true});
+  document.addEventListener('touchend', function(e) {
+    var btn = e.target.closest('button');
+    if(btn && btn === touchStartedOnBtn && !btn.disabled) {
+      e.preventDefault();
+      if(typeof btn.onclick === 'function') {
+        btn.onclick.call(btn, e);
+      } else if(btn.getAttribute('onclick')) {
+        try { (new Function(btn.getAttribute('onclick'))).call(btn); } catch(err) {}
+      }
+    }
+    touchStartedOnBtn = null;
+  }, {passive: false});
+})();
+
 // ===== MOBILE BACK BUTTON / SWIPE =====
 window.addEventListener('popstate', function(e) {
   // যদি কোনো modal খোলা থাকে — সেটা বন্ধ করো
